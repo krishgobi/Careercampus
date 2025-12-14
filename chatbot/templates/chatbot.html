@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 
-{% block title %}AI Chatbot - Smart Campus Assistant{% endblock %}
+{% block title %}AI Chatbot - Kattral AI{% endblock %}
 
 {% block content %}
 <div class="chatbot-page">
     <!-- Chat History Sidebar -->
     <div class="chat-history-sidebar">
-        <div class="chat-history-header">
-            <h3><i class="fas fa-history"></i> Chat History</h3>
-            <button class="btn-new-chat" onclick="createNewChat()">
+        <div class="sidebar-section-header">
+            <h3><i class="fas fa-history"></i> History</h3>
+            <button class="btn-icon" onclick="createNewChat()" title="Ne Chat">
                 <i class="fas fa-plus"></i>
             </button>
         </div>
@@ -21,58 +21,274 @@
                     <p>{{ chat.updated_at|date:"M d, H:i" }}</p>
                 </div>
                 <div class="chat-actions">
-                    <button onclick="event.stopPropagation(); renameChat({{ chat.id }})" title="Rename">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); exportChat({{ chat.id }})" title="Download PDF">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); deleteChat({{ chat.id } )" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <button onclick="event.stopPropagation(); renameChat({{ chat.id }})" title="Rename"><i
+                            class="fas fa-pen"></i></button>
+                    <button onclick="event.stopPropagation(); downloadChatAsPDF({{ chat.id }})" title="Download PDF"><i
+                            class="fas fa-file-pdf"></i></button>
+                    <button onclick="event.stopPropagation(); deleteChat({{ chat.id }})" title="Delete"><i
+                            class="fas fa-trash"></i></button>
                 </div>
             </div>
             {% empty %}
-            <p class="empty-state">No chats yet. Start a conversation!</p>
+            <div class="empty-history">
+                <p>No previous chats</p>
+            </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- Chat Interface -->
-    <div class="chat-container">
+    <!-- Main Chat Area -->
+    <div class="chat-main">
         <div class="chat-header">
-            <div class="chat-title">
-                <i class="fas fa-robot"></i>
-                <span id="chatTitle">AI Assistant</span>
+            <div class="header-left">
+                <div class="chat-title-editable">
+                    <span id="chatTitle">New Conversation</span>
+                    <i class="fas fa-pen title-edit-icon" onclick="editCurrentChatTitle()"></i>
+                </div>
             </div>
 
-            <div class="document-selector">
-                <label><i class="fas fa-file"></i> Document:</label>
-                <select id="documentSelect" onchange="switchDocument()">
-                    <option value="">Select a document</option>
-                    {% for doc in documents %}
-                    <option value="{{ doc.id }}">{{ doc.title }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div class="chat-messages" id="chatMessages">
-            <div class="welcome-message">
-                <i class="fas fa-graduation-cap"></i>
-                <h2>Welcome to Smart Campus Assistant!</h2>
-                <p>Select a document from the dropdown above and start asking questions about your course materials.</p>
-            </div>
-        </div>
-
-        <div class="chat-input-container">
-            <div class="chat-input">
-                <input type="text" id="messageInput" placeholder="Ask a question about your document..."
-                    onkeypress="handleKeyPress(event)">
-                <button class="btn-send" onclick="sendMessage()">
-                    <i class="fas fa-paper-plane"></i>
+            <!-- Center: Mode Buttons -->
+            <div class="header-center">
+                <button class="mode-btn" id="learningTrackBtn" onclick="openLearningTrack()" title="Learning Track">
+                    <i class="fas fa-bolt"></i>
+                    <span>Learning Track</span>
+                </button>
+                <button class="mode-btn" id="quizBtn" onclick="openQuizModal()" title="Quiz">
+                    <i class="fas fa-gem"></i>
+                    <span>Quiz</span>
                 </button>
             </div>
+
+            <div class="header-controls">
+                <div class="document-selector-enhanced">
+                    <div class="doc-select-wrapper">
+                        <i class="fas fa-file-alt"></i>
+                        <select id="documentSelect" onchange="switchDocument()">
+                            <option value="">Select Document...</option>
+                            {% for doc in documents %}
+                            <option value="{{ doc.id }}">{{ doc.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn-upload-doc" onclick="triggerFileUpload()" title="Upload New Document">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <input type="file" id="chatFileInput" accept=".pdf,.docx,.pptx" style="display:none"
+                        onchange="handleChatFileUpload(event)">
+                </div>
+
+                <div class="voice-settings">
+                    <i class="fas fa-volume-up"></i>
+                    <select id="accentSelect" onchange="changeVoiceAccent()">
+                        <option value="en-US">US English</option>
+                        <option value="en-GB">UK English</option>
+                        <option value="en-IN">Indian English</option>
+                        <option value="en-AU">Australian English</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-content-area">
+            <!-- Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-screen">
+                    <div class="welcome-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h2>Welcome to <span class="brand-text">கற்றல் AI</span></h2>
+                    <p>Select a document and an AI model to begin your learning journey.</p>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-wrapper">
+                <div class="chat-input-container">
+                    <!-- Gemini-style Model Selector -->
+                    <div class="model-selector-inline">
+                        <button class="model-dropdown-trigger" onclick="toggleModelDropdown()" title="Select AI Model">
+                            <span id="currentModelDisplay">Fast</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="model-dropdown" id="modelDropdown">
+                            <div class="model-dropdown-header">Choose your model</div>
+                            <div id="modelDropdownList">
+                                <!-- Models populated via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-voice" id="voiceBtn" onclick="toggleVoiceInput()"
+                        title="Speak (Click again to stop)">
+                        <i class="fas fa-microphone" id="voiceIcon"></i>
+                    </button>
+                    <textarea id="messageInput" placeholder="Type your question or use voice input..." rows="1"
+                        oninput="autoResize(this)" onkeypress="handleKeyPress(event)"></textarea>
+                    <button class="btn-send" onclick="sendMessage()" title="Send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="input-footer">
+                    <p>AI can make mistakes. Please verify important information.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Modal -->
+<div class="quiz-modal" id="quizModal">
+    <div class="quiz-modal-content">
+        <button class="quiz-close-btn" onclick="closeQuizModal()">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <!-- Step 1: Source Selection -->
+        <div class="quiz-step" id="quizSourceSelect">
+            <div class="quiz-header">
+                <i class="fas fa-gem quiz-icon-large"></i>
+                <h2>Create Quiz</h2>
+                <p>Choose your quiz source</p>
+            </div>
+            <div class="quiz-source-options">
+                <button class="quiz-source-btn" onclick="selectQuizSource('document')">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>From Document</h3>
+                    <p>Quiz based on uploaded document</p>
+                </button>
+                <button class="quiz-source-btn" onclick="selectQuizSource('prompt')">
+                    <i class="fas fa-keyboard"></i>
+                    <h3>Custom Prompt</h3>
+                    <p>Create quiz on any topic</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Prompt Options (for custom prompt) -->
+        <div class="quiz-step hidden" id="quizPromptOptions">
+            <div class="quiz-header">
+                <h2>Quiz Preparation</h2>
+                <p>Would you like to learn before taking the quiz?</p>
+            </div>
+            <div class="quiz-source-options">
+                <button class="quiz-source-btn" onclick="quizPrepChoice('learn')">
+                    <i class="fas fa-book-open"></i>
+                    <h3>Learn First</h3>
+                    <p>Study the topic before quiz</p>
+                </button>
+                <button class="quiz-source-btn" onclick="quizPrepChoice('try')">
+                    <i class="fas fa-bolt"></i>
+                    <h3>Try Quiz</h3>
+                    <p>Test your knowledge now</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Prompt Input -->
+        <div class="quiz-step hidden" id="quizPromptInput">
+            <div class="quiz-header">
+                <h2>Enter Quiz Topic</h2>
+                <p>What would you like to be quizzed on?</p>
+            </div>
+            <textarea id="quizTopicInput" placeholder="Example: Create 10 questions on Democracy" rows="4"></textarea>
+            <div class="quiz-input-controls">
+                <label>Number of questions:</label>
+                <input type="number" id="quizNumQuestions" value="10" min="5" max="20" />
+                <button class="btn-primary" onclick="generateQuiz()">
+                    <i class="fas fa-magic"></i> Generate Quiz
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Loading -->
+        <div class="quiz-step hidden" id="quizLoading">
+            <div class="quiz-loading-spinner">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Generating your quiz...</p>
+            </div>
+        </div>
+
+        <!-- Step 5: Quiz Question Display -->
+        <div class="quiz-step hidden" id="quizQuestionsDisplay">
+            <div class="quiz-progress-bar">
+                <div class="quiz-progress-fill" id="quizProgressBar"></div>
+            </div>
+            <div class="quiz-question-counter">
+                <span id="currentQuestionNum">1</span> / <span id="totalQuestions">10</span>
+            </div>
+            <div class="quiz-question-container">
+                <h3 id="quizQuestionText">Question text will appear here</h3>
+                <div class="quiz-options" id="quizOptionsContainer">
+                    <!-- Options populated via JS -->
+                </div>
+                <button class="btn-primary" id="quizNextBtn" onclick="nextQuestion()" disabled>
+                    Next Question
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 6: Results -->
+        <div class="quiz-step hidden" id="quizResults">
+            <div class="quiz-result-header">
+                <i class="fas fa-trophy"></i>
+                <h2>Quiz Completed!</h2>
+                <div class="quiz-score-display">
+                    <span id="quizScoreNum">8</span> / <span id="quizScoreTotal">10</span>
+                </div>
+                <p class="quiz-score-percent" id="quizScorePercent">80%</p>
+            </div>
+            <div class="quiz-wrong-answers" id="quizWrongAnswersContainer">
+                <!-- Wrong answers populated via JS -->
+            </div>
+            <div class="quiz-result-actions">
+                <button class="btn-primary" onclick="closeQuizModal()">Close</button>
+                <button class="btn-text" onclick="retakeQuiz()">Retake Quiz</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Learning Track Panel -->
+<div class="learning-panel" id="learningPanel">
+    <div class="learning-panel-header">
+        <h3><i class="fas fa-bolt"></i> Learning Track</h3>
+        <button class="panel-close-btn" onclick="closeLearningPanel()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="learning-panel-content" id="learningPanelContent">
+        <div class="learning-empty">
+            <i class="fas fa-graduation-cap"></i>
+            <p>No learning items yet</p>
+            <small>Wrong quiz answers will appear here</small>
+        </div>
+    </div>
+    <div class="learning-panel-actions">
+        <button class="btn-text" onclick="exportLearningPDF()">
+            <i class="fas fa-file-pdf"></i> Export PDF
+        </button>
+        <button class="btn-text" onclick="shareLearningEmail()">
+            <i class="fas fa-envelope"></i> Share via Email
+        </button>
+    </div>
+</div>
+
+<!-- Feedback Modal (Keep hidden until needed) -->
+<div class="feedback-modal" id="feedbackModal">
+    <div class="feedback-modal-content">
+        <h3>Rate Response</h3>
+        <p id="feedbackModelName"></p>
+        <div class="star-rating" id="starRating">
+            <span class="star" data-rating="1">★</span>
+            <span class="star" data-rating="2">★</span>
+            <span class="star" data-rating="3">★</span>
+            <span class="star" data-rating="4">★</span>
+            <span class="star" data-rating="5">★</span>
+        </div>
+        <textarea id="feedbackComment" placeholder="Optional feedback..."></textarea>
+        <div class="feedback-actions">
+            <button class="btn-primary" onclick="submitFeedback()">Submit</button>
+            <button class="btn-text" onclick="closeFeedbackModal()">Skip</button>
         </div>
     </div>
 </div>
@@ -81,4 +297,5 @@
 {% block extra_js %}
 {% load static %}
 <script src="{% static 'js/chatbot.js' %}"></script>
+<script src="{% static 'js/quiz.js' %}"></script>
 {% endblock %}

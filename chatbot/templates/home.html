@@ -1,65 +1,81 @@
 {% extends 'base.html' %}
 
-{% block title %}Upload Documents - Smart Campus Assistant{% endblock %}
+{% block title %}கற்றல் AI - Smart Learning Assistant for Students{% endblock %}
 
 {% block content %}
-<div class="upload-page">
-    <div class="page-header">
-        <h1><i class="fas fa-cloud-upload-alt"></i> Upload Course Materials</h1>
-        <p>Drag and drop your PDFs, Word documents, or PowerPoint presentations</p>
+<div class="page-header">
+    <h1>கற்றல் AI (Kattral AI)</h1>
+    <p class="subtitle">Your Personal AI Learning Companion</p>
+</div>
+
+<!-- Project Description & Features -->
+<div class="features-section">
+    <div class="intro-text">
+        <h2>Empowering College Students with AI-Powered Learning</h2>
+        <p>Kattral AI is an intelligent learning platform designed specifically for college students. Upload your course
+            materials and let AI help you study smarter, not harder.</p>
     </div>
 
-    <div class="upload-section">
-        <div class="drop-zone" id="dropZone">
-            <i class="fas fa-file-upload"></i>
-            <h3>Drag & Drop Files Here</h3>
-            <p>or click to browse</p>
-            <input type="file" id="fileInput" multiple accept=".pdf,.docx,.pptx" hidden>
-            <button class="btn-primary" onclick="document.getElementById('fileInput').click()">
-                <i class="fas fa-folder-open"></i> Browse Files
-            </button>
-        </div>
-
-        <div class="file-list" id="fileList">
-            <!-- Files will be added here dynamically -->
-        </div>
-
-        <div class="upload-progress" id="uploadProgress" style="display: none;">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+    <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-robot"></i>
             </div>
-            <p class="progress-text" id="progressText">Uploading files...</p>
+            <h3>Multiple AI Models</h3>
+            <p>Get answers from various AI models (Gemini, Llama, Mixtral) and compare different perspectives to enhance
+                your understanding.</p>
         </div>
-    </div>
 
-    <div class="documents-grid">
-        <h2><i class="fas fa-folder"></i> Uploaded Documents</h2>
-        <div class="documents-list" id="documentsList">
-            {% for doc in documents %}
-            <div class="document-card">
-                <div class="doc-icon">
-                    {% if doc.file_type == 'pdf' %}
-                    <i class="fas fa-file-pdf"></i>
-                    {% elif doc.file_type == 'docx' %}
-                    <i class="fas fa-file-word"></i>
-                    {% elif doc.file_type == 'pptx' %}
-                    <i class="fas fa-file-powerpoint"></i>
-                    {% endif %}
-                </div>
-                <div class="doc-info">
-                    <h4>{{ doc.title }}</h4>
-                    <p>{{ doc.uploaded_at|date:"M d, Y H:i" }}</p>
-                </div>
+        <!-- Feature 2 -->
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-brain"></i>
             </div>
-            {% empty %}
-            <p class="empty-state">No documents uploaded yet. Start by uploading your course materials!</p>
-            {% endfor %}
+            <h3>Smart Q&A</h3>
+            <p>Ask questions about your course materials and receive accurate, context-aware answers from your uploaded
+                documents.</p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <h3>Question Paper Prediction</h3>
+            <p>Analyze past papers and course content to get insights on potential exam questions and important topics.
+            </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <h3>Virtual Teacher</h3>
+            <p>Get personalized explanations and teaching assistance available 24/7 to help you grasp difficult
+                concepts.</p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-question-circle"></i>
+            </div>
+            <h3>Quiz Generator</h3>
+            <p>Create custom quizzes from your study materials to test your knowledge and prepare for exams effectively.
+            </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-upload"></i>
+            </div>
+            <h3>Document Learning</h3>
+            <p>Upload PDFs, DOCX, and PPTX files. Our AI extracts and understands your content for intelligent
+                responses.</p>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-{% load static %}
-<script src="{% static 'js/upload.js' %}"></script>
 {% endblock %}

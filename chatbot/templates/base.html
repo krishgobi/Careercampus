@@ -1,65 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Smart Campus Assistant{% endblock %}</title>
+    <title>{% block title %}கற்றல் AI - Kattral AI{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/quiz-styles.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <nav class="sidebar">
+        <!-- Navigation Sidebar - Auto-hide on chat/models pages, always visible on home -->
+        <nav class="sidebar" id="mainSidebar">
             <div class="sidebar-header">
                 <div class="logo">
                     <i class="fas fa-graduation-cap"></i>
-                    <span>Campus AI</span>
+                    <span class="nav-text">
+                        <span class="tamil-text">கற்றல்</span> AI
+                    </span>
                 </div>
             </div>
-            
+
             <div class="nav-links">
-                <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">
-                    <i class="fas fa-upload"></i>
-                    <span>Upload Documents</span>
+                <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}" title="Home">
+                    <i class="fas fa-home"></i>
+                    <span class="nav-text">Home</span>
                 </a>
-                <a href="/chat/" class="nav-link {% if request.path == '/chat/' %}active{% endif %}">
+                <a href="/chat/" class="nav-link {% if request.path == '/chat/' %}active{% endif %}" title="AI Chatbot">
                     <i class="fas fa-comments"></i>
-                    <span>AI Chatbot</span>
+                    <span class="nav-text">AI Chatbot</span>
                 </a>
-                <a href="#" class="nav-link">
-                    <i class="fas fa-layer-group"></i>
-                    <span>Multi LLM</span>
+                <a href="/models/" class="nav-link {% if request.path == '/models/' %}active{% endif %}"
+                    title="AI Models">
+                    <i class="fas fa-robot"></i>
+                    <span class="nav-text">AI Models</span>
                 </a>
-                <a href="#" class="nav-link">
+                <a href="#" class="nav-link" title="Question Papers">
                     <i class="fas fa-file-alt"></i>
-                    <span>Question Paper Prediction</span>
+                    <span class="nav-text">Question Papers</span>
                 </a>
-                <a href="#" class="nav-link">
+                <a href="#" class="nav-link" title="Virtual Teacher">
                     <i class="fas fa-chalkboard-teacher"></i>
-                    <span>Virtual Teacher</span>
+                    <span class="nav-text">Virtual Teacher</span>
                 </a>
             </div>
-            
+
             <div class="sidebar-footer">
                 <div class="user-info">
                     <i class="fas fa-user-circle"></i>
-                    <span>Student Portal</span>
+                    <span class="nav-text">Student Portal</span>
                 </div>
             </div>
         </nav>
-        
+
         <!-- Main Content -->
         <main class="main-content">
             {% block content %}{% endblock %}
         </main>
     </div>
-    
+
     {% block extra_js %}{% endblock %}
+
+    <!-- Conditional navbar auto-hide for chat and models pages -->
+    <script>
+        // Add auto-hide class to sidebar on chat and models pages only
+        const currentPath = window.location.pathname;
+        const sidebar = document.getElementById('mainSidebar');
+
+        if (currentPath.includes('/chat/') || currentPath.includes('/models/')) {
+            sidebar.classList.add('auto-hide');
+        }
+    </script>
 </body>
+
 </html>

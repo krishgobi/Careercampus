@@ -104,3 +104,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # API Keys
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
+# Email Configuration for Learning Track Sharing
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'medicoapplication05@gmail.com'
+EMAIL_HOST_PASSWORD = 'gdminhcuetlmxkpu'
+DEFAULT_FROM_EMAIL = 'medicoapplication05@gmail.com'

@@ -3,6 +3,9 @@ from django.http import JsonResponse, FileResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.core.files.storage import default_storage
+from django.core.mail import send_mail
+from django.conf import settings
+from django.db.models import Avg
 import json
 import os
 from io import BytesIO
@@ -11,13 +14,15 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.units import inch
 
-from .models import Document, Chat, Message
+from .models import Document, Chat, Message, AIModel, ModelUsage, ModelFeedback, Quiz, QuizQuestion, LearningItem
 from .utils import (
     extract_text_from_file,
     chunk_text,
     create_vector_store,
-    process_query
+    process_query,
+    generate_answer
 )
+from .quiz_utils import generate_quiz_questions, evaluate_answer
 
 
 def home(request):
@@ -89,12 +94,13 @@ def chat_interface(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def chat_api(request):
-    """Handle chat messages with RAG"""
+    """Handle chat messages with RAG and model selection"""
     try:
         data = json.loads(request.body)
         query = data.get('message')
         document_id = data.get('document_id')
         chat_id = data.get('chat_id')
+        model_id = data.get('model_id', 'llama-3.1-8b-instant')  # Default model
         
         if not query or not document_id:
             return JsonResponse({
@@ -102,14 +108,25 @@ def chat_api(request):
                 'message': 'Missing message or document_id'
             }, status=400)
         
+        # Get model instance
+        try:
+            ai_model = AIModel.objects.get(model_id=model_id, is_active=True)
+        except AIModel.DoesNotExist:
+            ai_model = AIModel.objects.get(model_id='llama-3.1-8b-instant')  # Fallback
+        
         # Get or create chat
         if chat_id:
             chat = get_object_or_404(Chat, id=chat_id)
+            # Update selected model if different
+            if chat.selected_model != ai_model:
+                chat.selected_model = ai_model
+                chat.save()
         else:
             document = get_object_or_404(Document, id=document_id)
             chat = Chat.objects.create(
                 name=f"Chat about {document.title}",
-                document=document
+                document=document,
+                selected_model=ai_model
             )
         
         # Save user message
@@ -126,23 +143,43 @@ def chat_api(request):
             for msg in messages
         ]
         
-        # Process query with RAG
-        answer = process_query(query, document_id, chat_history[:-1])  # Exclude current query
+        # Track model usage
+        session_key = request.session.session_key or 'default'
+        usage, created = ModelUsage.objects.get_or_create(
+            session_key=session_key,
+            model=ai_model
+        )
+        usage.prompt_count += 1
+        usage.save()
+        
+        # Check if feedback is needed (every 10 prompts after last feedback)
+        need_feedback = (usage.prompt_count - usage.last_feedback_at) >= 10
+        
+        # Process query with RAG (pass model_id)
+        from .utils import generate_answer, retrieve_relevant_chunks
+        chunks = retrieve_relevant_chunks(query, document_id)
+        context = "\n\n".join(chunks)
+        answer = generate_answer(query, context, model_id=model_id, chat_history=chat_history[:-1])
         
         # Save assistant message
         Message.objects.create(
             chat=chat,
             role='assistant',
-            content=answer
+            content=answer,
+            model_used=ai_model
         )
         
         return JsonResponse({
             'status': 'success',
             'chat_id': chat.id,
-            'answer': answer
+            'answer': answer,
+            'prompt_count': usage.prompt_count,
+            'need_feedback': need_feedback
         })
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'status': 'error',
             'message': str(e)
@@ -290,3 +327,108 @@ def get_documents(request):
         for doc in documents
     ]
     return JsonResponse({'documents': doc_list})
+
+
+@require_http_methods(["GET"])
+def list_models(request):
+    """Get all available AI models"""
+    models = AIModel.objects.filter(is_active=True)
+    model_list = [
+        {
+            'id': model.id,
+            'name': model.name,
+            'model_id': model.model_id,
+            'provider': model.provider,
+            'description': model.description,
+            'use_cases': model.use_cases.split(',') if model.use_cases else [],
+            'strength': model.strength
+        }
+        for model in models
+    ]
+    return JsonResponse({'models': model_list})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def submit_feedback(request):
+    """Submit feedback for a model"""
+    try:
+        data = json.loads(request.body)
+        model_id = data.get('model_id')
+        rating = data.get('rating')
+        comment = data.get('comment', '')
+        
+        if not model_id or not rating:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Missing model_id or rating'
+            }, status=400)
+        
+        # Get model
+        ai_model = get_object_or_404(AIModel, model_id=model_id)
+        
+        # Create feedback
+        session_key = request.session.session_key or 'default'
+        feedback = ModelFeedback.objects.create(
+            model=ai_model,
+            rating=rating,
+            comment=comment,
+            session_key=session_key
+        )
+        
+        # Update last_feedback_at in ModelUsage
+        try:
+            usage = ModelUsage.objects.get(session_key=session_key, model=ai_model)
+            usage.last_feedback_at = usage.prompt_count
+            usage.save()
+        except ModelUsage.DoesNotExist:
+            pass
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Feedback submitted successfully'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_model_feedback(request):
+    """Get feedback for all models (for models page)"""
+    models = AIModel.objects.filter(is_active=True)
+    models_data = []
+    
+    for model in models:
+        feedback_list = model.feedback.all()[:10]  # Latest 10 feedback
+        avg_rating = model.feedback.aggregate(Avg('rating'))['rating__avg'] or 0
+        
+        models_data.append({
+            'id': model.id,
+            'name': model.name,
+            'model_id': model.model_id,
+            'provider': model.provider,
+            'description': model.description,
+            'use_cases': model.use_cases.split(',') if model.use_cases else [],
+            'strength': model.strength,
+            'avg_rating': round(avg_rating, 1),
+            'feedback_count': model.feedback.count(),
+            'recent_feedback': [
+                {
+                    'rating': fb.rating,
+                    'comment': fb.comment,
+                    'created_at': fb.created_at.strftime('%Y-%m-%d %H:%M')
+                }
+                for fb in feedback_list
+            ]
+        })
+    
+    return JsonResponse({'models': models_data})
+
+
+def models_page(request):
+    """Render models page with feedback"""
+    return render(request, 'models.html')

@@ -22,18 +22,40 @@ VECTOR_STORE_DIR = Path(settings.MEDIA_ROOT) / 'vector_stores'
 VECTOR_STORE_DIR.mkdir(exist_ok=True, parents=True)
 
 
-def call_gemini_api(messages, temperature=0.7, max_tokens=1024):
-    """Call Gemini API for chat completions"""
+def call_llm_api(model_id, messages, temperature=0.7, max_tokens=1024):
+    """
+    Call LLM API for chat completions - supports both Gemini and Groq providers
+    
+    Args:
+        model_id: Model identifier (e.g., 'gemini-2.0-flash-exp', 'llama-3.1-8b-instant')
+        messages: List of message dicts with 'role' and 'content'
+        temperature: Temperature for generation
+        max_tokens: Maximum tokens to generate
+    
+    Returns:
+        Generated text response
+    """
+    # Determine provider based on model_id
+    gemini_models = ['gemini-2.0-flash-exp', 'gemini-2.0-flash-lite', 'gemini-2.5-flash']
+    
+    if model_id in gemini_models:
+        return _call_gemini(model_id, messages, temperature, max_tokens)
+    else:
+        return _call_groq(model_id, messages, temperature, max_tokens)
+
+
+def _call_gemini(model_id, messages, temperature, max_tokens):
+    """Call Gemini API"""
     import google.generativeai as genai
     
     # Configure Gemini
     genai.configure(api_key=settings.GEMINI_API_KEY)
     
-    # Convert messages to Gemini format (combine into single prompt)
+    # Convert messages to Gemini format
     prompt_parts = []
     for msg in messages:
-        role = msg["role"]
-        content = msg["content"]
+        role = msg.get("role", "")
+        content = msg.get("content", "")
         if role == "system":
             prompt_parts.append(f"Instructions: {content}\n")
         elif role == "user":
@@ -43,8 +65,8 @@ def call_gemini_api(messages, temperature=0.7, max_tokens=1024):
     
     prompt = "\n".join(prompt_parts)
     
-    # Use Gemini 2.5 Flash model (latest)
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    # Create model instance
+    model = genai.GenerativeModel(model_id)
     
     response = model.generate_content(
         prompt,
@@ -55,6 +77,33 @@ def call_gemini_api(messages, temperature=0.7, max_tokens=1024):
     )
     
     return response.text
+
+
+def _call_groq(model_id, messages, temperature, max_tokens):
+    """Call Groq API"""
+    import requests
+    
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "model": model_id,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    
+    if response.status_code != 200:
+        print(f"[ERROR] Groq API returned {response.status_code}")
+        print(f"[ERROR] Response: {response.text}")
+        raise Exception(f"Groq API error: {response.text}")
+    
+    return response.json()["choices"][0]["message"]["content"]
 
 
 def get_vectorizer():
@@ -235,8 +284,8 @@ def retrieve_relevant_chunks(query: str, document_id: int, k: int = 3) -> List[s
     return relevant_chunks
 
 
-def generate_answer(query: str, context: str, chat_history: List[dict] = None) -> str:
-    """Generate answer using Groq LLM with RAG context"""
+def generate_answer(query: str, context: str, model_id: str = 'llama-3.1-8b-instant', chat_history: List[dict] = None) -> str:
+    """Generate answer using LLM with RAG context - supports multiple models"""
     if chat_history is None:
         chat_history = []
     
@@ -253,7 +302,7 @@ Instructions:
 - If relevant, provide examples or explanations to help the student understand better
 """
     
-    # Build messages for Groq API
+    # Build messages for API
     messages = [{"role": "system", "content": system_message}]
     
     # Add chat history (last 5 messages for context)
@@ -267,10 +316,10 @@ Instructions:
     messages.append({"role": "user", "content": query})
     
     try:
-        print(f"[DEBUG] Calling Gemini API with query: {query[:50]}...")
-        # Call Gemini API for response generation
-        answer = call_gemini_api(messages, temperature=0.7, max_tokens=1024)
-        print(f"[DEBUG] Gemini API response received: {answer[:100]}...")
+        print(f"[DEBUG] Calling LLM API ({model_id}) with query: {query[:50]}...")
+        # Call unified LLM API (supports Gemini + Groq)
+        answer = call_llm_api(model_id, messages, temperature=0.7, max_tokens=1024)
+        print(f"[DEBUG] LLM API response received: {answer[:100]}...")
         return answer
     
     except Exception as e:

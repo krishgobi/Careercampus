@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Models - Kattral AI{% endblock %}
+
+{% block content %}
+<div class="models-page">
+    <div class="page-header">
+        <h1>Available AI Models</h1>
+        <p>Explore our AI models and see what other users think</p>
+    </div>
+
+    <div class="models-grid-container" id="modelsPage">
+        <p style="text-align: center; color: var(--text-muted);">Loading models...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function loadModelsPage() {
+        try {
+            const response = await fetch('/api/feedback/models/');
+            const data = await response.json();
+
+            if (data.models.length === 0) {
+                document.getElementById('modelsPage').innerHTML = '<p class="empty-state">No models available yet.</p>';
+                return;
+            }
+
+            const html = '<div class="models-grid">' + data.models.map((model, index) => `
+                <div class="model-card" style="animation-delay: ${index * 0.1}s">
+                    <div class="model-card-header">
+                        <div class="model-icon">
+                            <i class="fas ${model.provider === 'gemini' ? 'fa-gem' : model.provider === 'groq' ? 'fa-bolt' : 'fa-robot'}"></i>
+                        </div>
+                        <span class="provider-tag">${model.provider.toUpperCase()}</span>
+                    </div>
+                    <h3>${model.name}</h3>
+                    <p class="model-description">${model.description}</p>
+                    <div class="model-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-star"></i>
+                            <span>${model.avg_rating} (${model.feedback_count} reviews)</span>
+                        </div>
+                        <div class="meta-item strength">
+                            <i class="fas fa-bolt"></i>
+                            <span>${model.strength}</span>
+                        </div>
+                    </div>
+                    <div class="use-cases-mini">
+                        ${model.use_cases.slice(0, 3).map(uc => `<span class="use-case-chip">${uc.trim()}</span>`).join('')}
+                    </div>
+                    ${model.recent_feedback.length > 0 ? `
+                        <div class="recent-feedback-mini">
+                            <h4><i class="fas fa-comment"></i> Recent Feedback</h4>
+                            ${model.recent_feedback.slice(0, 2).map(fb => `
+                                <div class="feedback-mini-item">
+                                    <div class="stars">${'★'.repeat(fb.rating)}${'☆'.repeat(5 - fb.rating)}</div>
+                                    ${fb.comment ? `<p>"${fb.comment.substring(0, 80)}${fb.comment.length > 80 ? '...' : ''}"</p>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('') + '</div>';
+
+            document.getElementById('modelsPage').innerHTML = html;
+        } catch (error) {
+            console.error('Error loading models page:', error);
+            document.getElementById('modelsPage').innerHTML = '<p class="empty-state">Error loading models. Please try again.</p>';
+        }
+    }
+
+    // Load models when page loads
+    document.addEventListener('DOMContentLoaded', loadModelsPage);
+</script>
+{% endblock %}
