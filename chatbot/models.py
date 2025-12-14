@@ -169,3 +169,56 @@ class LearningItem(models.Model):
     def __str__(self):
         return f"Learn: {self.topic} - {self.question[:30]}..."
 
+
+class QuestionPaper(models.Model):
+    """Generated question paper"""
+    PAPER_TYPE_CHOICES = [
+        ('important', 'Important Questions'),
+        ('predicted', 'Predicted Paper'),
+    ]
+    
+    title = models.CharField(max_length=255)
+    subject = models.CharField(max_length=100)
+    paper_type = models.CharField(max_length=20, choices=PAPER_TYPE_CHOICES)
+    source_document = models.ForeignKey(Document, on_delete=models.SET_NULL, null=True, blank=True)
+    source_topic = models.TextField(blank=True)
+    session_key = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.subject}"
+
+
+class GeneratedQuestion(models.Model):
+    """Individual question in a question paper"""
+    paper = models.ForeignKey(QuestionPaper, on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    marks = models.IntegerField()
+    question_type = models.CharField(max_length=50, blank=True)  # descriptive, short answer, etc.
+    answer_hint = models.TextField(blank=True)
+    order = models.IntegerField(default=0)
+    
+    class Meta:
+        ordering = ['marks', 'order']
+    
+    def __str__(self):
+        return f"{self.marks} marks: {self.question_text[:50]}..."
+
+
+class PreviousPaper(models.Model):
+    """Uploaded previous year question papers for prediction"""
+    subject = models.CharField(max_length=100)
+    file = models.FileField(upload_to='previous_papers/')
+    year = models.IntegerField(null=True, blank=True)
+    text_content = models.TextField(blank=True)  # Extracted text
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-year', '-uploaded_at']
+    
+    def __str__(self):
+        return f"{self.subject} - {self.year or 'Unknown Year'}"
+

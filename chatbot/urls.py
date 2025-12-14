@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import quiz_views
+from . import question_paper_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -36,4 +37,17 @@ urlpatterns = [
     
     # Teaching Mode
     path('api/teach/', quiz_views.teach_topic, name='teach_topic'),
+    
+    # Enhanced Quiz endpoints (RAG-based)
+    path('api/quiz/extract-headings/', quiz_views.extract_headings, name='extract_headings'),
+    path('api/quiz/generate-from-headings/', quiz_views.generate_quiz_from_headings_api, name='generate_quiz_from_headings'),
+    path('api/quiz/submit-instant/', quiz_views.submit_quiz_instant, name='submit_quiz_instant'),
+    
+    # Question Paper endpoints
+    path('question-paper/', question_paper_views.question_paper_home, name='question_paper'),
+    path('api/question-paper/generate/', question_paper_views.generate_important_questions, name='generate_important_questions'),
+    path('api/question-paper/predict/', question_paper_views.predict_questions, name='predict_questions'),
+    path('api/question-paper/<int:paper_id>/export/', question_paper_views.export_pdf, name='export_question_paper'),
+    path('question-paper/<int:paper_id>/', question_paper_views.view_paper, name='view_paper'),
 ]
+

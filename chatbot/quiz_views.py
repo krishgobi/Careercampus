@@ -13,8 +13,9 @@ from reportlab.lib.units import inch
 import json
 
 from .models import Quiz, QuizQuestion, LearningItem, Document
-from .quiz_utils import generate_quiz_questions, evaluate_answer
+from .quiz_utils import generate_quiz_questions, evaluate_answer, generate_quiz_from_headings
 from .utils import generate_answer
+from .rag_service import extract_document_headings, get_heading_content
 
 # ===== Quiz API Endpoints =====
 
@@ -380,3 +381,162 @@ def teach_topic(request):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+
+# ===== Enhanced Quiz API Endpoints =====
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def extract_headings(request):
+    """Extract headings from document using RAG"""
+    try:
+        data = json.loads(request.body)
+        document_id = data.get('document_id')
+        
+        if not document_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Document ID required'
+            }, status=400)
+        
+        # Extract headings using RAG
+        headings = extract_document_headings(document_id)
+        
+        return JsonResponse({
+            'status': 'success',
+            'headings': headings,
+            'total_headings': len(headings)
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def generate_quiz_from_headings_api(request):
+    """Generate quiz from selected document headings"""
+    try:
+        data = json.loads(request.body)
+        document_id = data.get('document_id')
+        selected_headings = data.get('selected_headings', [])
+        num_questions = int(data.get('num_questions', 10))
+        
+        if not document_id or not selected_headings:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Document ID and selected headings required'
+            }, status=400)
+        
+        # Generate quiz using selected headings
+        questions_data = generate_quiz_from_headings(
+            document_id=document_id,
+            selected_headings=selected_headings,
+            num_questions=num_questions
+        )
+        
+        # Create quiz in database
+        session_key = request.session.session_key or 'default'
+        document = Document.objects.get(id=document_id)
+        
+        quiz = Quiz.objects.create(
+            topic=f"Quiz on: {document.title}",
+            source_type='document',
+            total_questions=len(questions_data),
+            session_key=session_key,
+            document=document
+        )
+        
+        # Create questions
+        for idx, q_data in enumerate(questions_data):
+            QuizQuestion.objects.create(
+                quiz=quiz,
+                question_text=q_data['question'],
+                options=json.dumps(q_data['options']),
+                correct_answer=q_data['correct_answer'],
+                explanation=q_data.get('explanation', ''),
+                question_number=idx + 1
+            )
+        
+        return JsonResponse({
+            'status': 'success',
+            'quiz_id': quiz.id,
+            'questions': questions_data
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def submit_quiz_instant(request):
+    """Submit quiz and get immediate results with concise explanations"""
+    try:
+        data = json.loads(request.body)
+        quiz_id = data.get('quiz_id')
+        answers = data.get('answers', {})
+        
+        if not quiz_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Quiz ID required'
+            }, status=400)
+        
+        quiz = Quiz.objects.get(id=quiz_id)
+        questions = QuizQuestion.objects.filter(quiz=quiz).order_by('question_number')
+        
+        correct_count = 0
+        wrong_answers = []
+        
+        for question in questions:
+            user_answer = answers.get(str(question.id), '')
+            is_correct = user_answer.strip() == question.correct_answer.strip()
+            
+            if is_correct:
+                correct_count += 1
+            else:
+                # Add to wrong answers with concise explanation
+                wrong_answers.append({
+                    'question_number': question.question_number,
+                    'question': question.question_text,
+                    'your_answer': user_answer,
+                    'correct_answer': question.correct_answer,
+                    'explanation': question.explanation  # Already concise (1 sentence)
+                })
+        
+        total_questions = questions.count()
+        percentage = round((correct_count / total_questions) * 100, 1) if total_questions > 0 else 0
+        
+        # Update quiz with results
+        quiz.score = correct_count
+        quiz.is_completed = True
+        quiz.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'score': correct_count,
+            'total': total_questions,
+            'percentage': percentage,
+            'wrong_answers': wrong_answers,
+            'passed': percentage >= 60
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+

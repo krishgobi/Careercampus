@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Question Papers - கற்றல் AI{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/question-paper.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="question-paper-container">
+    <div class="qp-header">
+        <h1><i class="fas fa-file-alt"></i> Question Paper Generator</h1>
+        <p>Generate important questions or predict exam papers using AI</p>
+    </div>
+
+    <div class="qp-tabs">
+        <button class="qp-tab active" data-tab="important">
+            <i class="fas fa-star"></i> Important Questions
+        </button>
+        <button class="qp-tab" data-tab="predict">
+            <i class="fas fa-brain"></i> Predict Paper
+        </button>
+    </div>
+
+    <!-- Important Questions Tab -->
+    <div class="qp-tab-content active" id="important-tab">
+        <div class="qp-card">
+            <h2>Generate Important Questions</h2>
+            <p class="qp-subtitle">From topics or uploaded documents</p>
+
+            <form id="important-form">
+                <div class="form-group">
+                    <label>Source Type</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="source_type" value="topic" checked>
+                            <span>Topic/Text</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="source_type" value="document">
+                            <span>Upload Document</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="topic-input">
+                    <label for="topic">Enter Topic or Content</label>
+                    <textarea id="topic" name="topic" rows="4"
+                        placeholder="Enter the topic or paste content here..."></textarea>
+                </div>
+
+                <div class="form-group hidden" id="document-input">
+                    <label for="document">Upload Document</label>
+                    <div class="file-upload-area">
+                        <input type="file" id="document" name="document" accept=".pdf,.docx,.pptx">
+                        <div class="upload-placeholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload or drag and drop</p>
+                            <span>PDF, DOCX, PPTX</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Subject Name</label>
+                    <input type="text" id="subject" name="subject" placeholder="e.g., Physics, Mathematics">
+                </div>
+
+                <div class="form-group">
+                    <label>Select Mark Types</label>
+                    <div class="marks-chips">
+                        <label class="chip-label">
+                            <input type="checkbox" name="marks" value="2" checked>
+                            <span class="chip">2 Marks</span>
+                        </label>
+                        <label class="chip-label">
+                            <input type="checkbox" name="marks" value="5" checked>
+                            <span class="chip">5 Marks</span>
+                        </label>
+                        <label class="chip-label">
+                            <input type="checkbox" name="marks" value="10" checked>
+                            <span class="chip">10 Marks</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-generate">
+                    <i class="fas fa-magic"></i> Generate Questions
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Predict Paper Tab -->
+    <div class="qp-tab-content" id="predict-tab">
+        <div class="qp-card">
+            <h2>Predict Question Paper</h2>
+            <p class="qp-subtitle">Upload previous year papers for AI prediction</p>
+
+            <form id="predict-form">
+                <div class="form-group">
+                    <label for="prev-subject">Subject Name</label>
+                    <input type="text" id="prev-subject" name="subject" placeholder="e.g., Computer Science" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="previous-papers">Upload Previous Papers</label>
+                    <div class="file-upload-area">
+                        <input type="file" id="previous-papers" name="previous_papers" multiple
+                            accept=".pdf,.docx,.pptx">
+                        <div class="upload-placeholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload multiple files</p>
+                            <span>PDF, DOCX, PPTX (Upload as many as you want)</span>
+                        </div>
+                    </div>
+                    <div id="file-list"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Mark Types for Prediction</label>
+                    <div class="marks-chips">
+                        <label class="chip-label">
+                            <input type="checkbox" name="pred-marks" value="1" checked>
+                            <span class="chip">1 Mark</span>
+                        </label>
+                        <label class="chip-label">
+                            <input type="checkbox" name="pred-marks" value="2" checked>
+                            <span class="chip">2 Marks</span>
+                        </label>
+                        <label class="chip-label">
+                            <input type="checkbox" name="pred-marks" value="3" checked>
+                            <span class="chip">3 Marks</span>
+                        </label>
+                        <label class="chip-label">
+                            <input type="checkbox" name="pred-marks" value="5">
+                            <span class="chip">5 Marks</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-generate">
+                    <i class="fas fa-brain"></i> Predict Questions
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading">
+        <div class="loader"></div>
+        <p>Generating questions using AI...</p>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section hidden" id="results">
+        <div class="results-header">
+            <h2>Generated Questions</h2>
+            <div class="results-actions">
+                <button class="btn-secondary" id="export-pdf">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </button>
+                <button class="btn-secondary" id="view-paper">
+                    <i class="fas fa-eye"></i> View Full Paper
+                </button>
+            </div>
+        </div>
+        <div id="questions-display"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/question-paper.js' %}"></script>
+{% endblock %}

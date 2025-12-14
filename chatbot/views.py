@@ -35,32 +35,53 @@ def home(request):
 @require_http_methods(["POST"])
 def upload_documents(request):
     """Handle multiple document uploads"""
+    import traceback
     try:
+        print("[DEBUG] Upload request received")
         files = request.FILES.getlist('files')
+        print(f"[DEBUG] Number of files: {len(files)}")
         uploaded_docs = []
         
-        for file in files:
+        for idx, file in enumerate(files):
+            print(f"[DEBUG] Processing file {idx + 1}/{len(files)}: {file.name}")
+            
             # Determine file type
             file_extension = file.name.split('.')[-1].lower()
+            print(f"[DEBUG] File extension: {file_extension}")
+            
             if file_extension not in ['pdf', 'docx', 'pptx']:
+                print(f"[WARNING] Skipping unsupported file type: {file_extension}")
                 continue
             
             # Save document
+            print(f"[DEBUG] Creating document record in database...")
             document = Document.objects.create(
                 title=file.name,
                 file=file,
                 file_type=file_extension
             )
+            print(f"[DEBUG] Document created with ID: {document.id}")
             
             # Extract text
             file_path = document.file.path
+            print(f"[DEBUG] File saved to: {file_path}")
+            print(f"[DEBUG] Extracting text from {file_extension} file...")
+            
             text_content = extract_text_from_file(file_path, file_extension)
+            print(f"[DEBUG] Extracted {len(text_content)} characters of text")
+            
             document.text_content = text_content
             document.save()
+            print(f"[DEBUG] Document text content saved")
             
             # Create vector store
+            print(f"[DEBUG] Chunking text...")
             chunks = chunk_text(text_content)
+            print(f"[DEBUG] Created {len(chunks)} chunks")
+            
+            print(f"[DEBUG] Creating vector store...")
             create_vector_store(document.id, chunks)
+            print(f"[DEBUG] Vector store created successfully")
             
             uploaded_docs.append({
                 'id': document.id,
@@ -68,16 +89,22 @@ def upload_documents(request):
                 'file_type': document.file_type,
                 'uploaded_at': document.uploaded_at.strftime('%Y-%m-%d %H:%M:%S')
             })
+            print(f"[DEBUG] File {idx + 1} processed successfully")
         
+        print(f"[DEBUG] All files processed. Total uploaded: {len(uploaded_docs)}")
         return JsonResponse({
             'status': 'success',
             'documents': uploaded_docs
         })
     
     except Exception as e:
+        error_trace = traceback.format_exc()
+        print(f"[ERROR] Upload failed with exception:")
+        print(error_trace)
         return JsonResponse({
             'status': 'error',
-            'message': str(e)
+            'message': str(e),
+            'traceback': error_trace
         }, status=500)
 
 
