@@ -90,11 +90,13 @@ function addMessage(role, content) {
     const avatar = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
 
     messageDiv.innerHTML = `
-        <div class="message-avatar">
-            ${avatar}
-        </div>
-        <div class="message-content">
-            ${content}
+        <div class="message-wrapper">
+            <div class="message-avatar">
+                ${avatar}
+            </div>
+            <div class="message-content">
+                ${content}
+            </div>
         </div>
     `;
 
@@ -110,14 +112,16 @@ function showTypingIndicator() {
     const typingDiv = document.createElement('div');
     typingDiv.className = 'message assistant typing-message';
     typingDiv.innerHTML = `
-        <div class="message-avatar">
-            <i class="fas fa-robot"></i>
-        </div>
-        <div class="message-content">
-            <div class="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
+        <div class="message-wrapper">
+            <div class="message-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
             </div>
         </div>
     `;
