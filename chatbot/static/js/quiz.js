@@ -31,25 +31,169 @@ function resetQuiz() {
 }
 
 // ===== Quiz Flow =====
+let uploadedDocumentIds = [];
+
 function selectQuizSource(source) {
     quizSource = source;
 
     if (source === 'document') {
-        // Check if document is selected
-        const docId = document.getElementById('documentSelect').value;
-        if (!docId) {
-            alert('Please select a document first');
-            closeQuizModal();
-            return;
-        }
-        // Generate quiz directly from document
-        document.getElementById('quizTopicInput').value = 'Quiz from selected document';
-        generateQuiz();
+        // Show document selection options (existing vs new)
+        showQuizStep('quizDocumentSelect');
     } else {
         // Show prompt options
         showQuizStep('quizPromptOptions');
     }
 }
+
+async function showExistingDocuments() {
+    showQuizStep('quizExistingDocs');
+
+    // Fetch existing documents
+    try {
+        const response = await fetch('/api/documents/');
+        const data = await response.json();
+
+        const container = document.getElementById('existingDocsContainer');
+
+        if (data.documents.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No documents uploaded yet</p>';
+        } else {
+            container.innerHTML = data.documents.map(doc => `
+                <div class="doc-item" onclick="selectDocumentForQuiz(${doc.id}, '${doc.title.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-file-pdf"></i>
+                    <div class="doc-info">
+                        <h4>${doc.title}</h4>
+                        <small>Uploaded: ${new Date(doc.uploaded_at).toLocaleDateString()}</small>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error fetching documents:', error);
+        alert('Failed to load documents');
+    }
+}
+
+function selectDocumentForQuiz(documentId, title) {
+    showQuizStep('quizLoading');
+    document.querySelector('#quizLoading p').textContent = 'Generating quiz from document...';
+
+    fetch('/api/quiz/generate/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            source_type: 'document',
+            topic: title,
+            num_questions: 10,
+            document_id: documentId
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                currentQuiz = data.quiz;
+                quizData = data.questions;
+                currentQuestionIndex = 0;
+                userAnswers = new Array(quizData.length).fill(null);
+                showQuestion();
+            } else {
+                alert('Error generating quiz: ' + data.message);
+                closeQuizModal();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to generate quiz');
+            closeQuizModal();
+        });
+}
+
+function showNewDocumentUpload() {
+    showQuizStep('quizNewDocUpload');
+    uploadedDocumentIds = [];
+    document.getElementById('quizUploadedFiles').innerHTML = '';
+    document.getElementById('generateQuizFromDocs').disabled = true;
+}
+
+async function handleQuizFileUpload(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const uploadList = document.getElementById('quizUploadedFiles');
+    uploadList.innerHTML = '<p>Uploading files...</p>';
+
+    const formData = new FormData();
+    for (let file of files) {
+        formData.append('files', file);
+    }
+
+    try {
+        const response = await fetch('/api/upload/', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            uploadedDocumentIds = data.documents.map(doc => doc.id);
+
+            uploadList.innerHTML = data.documents.map(doc => `
+                <div class="uploaded-file-item">
+                    <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                    <span>${doc.title}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('generateQuizFromDocs').disabled = false;
+        } else {
+            uploadList.innerHTML = '<p style="color: var(--danger);">Upload failed</p>';
+        }
+    } catch (error) {
+        console.error('Error uploading:', error);
+        uploadList.innerHTML = '<p style="color: var(--danger);">Upload failed</p>';
+    }
+}
+
+function generateQuizFromUploadedDocs() {
+    if (uploadedDocumentIds.length === 0) return;
+
+    const documentId = uploadedDocumentIds[0];
+
+    showQuizStep('quizLoading');
+    document.querySelector('#quizLoading p').textContent = 'Generating quiz from uploaded documents...';
+
+    fetch('/api/quiz/generate/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            source_type: 'document',
+            topic: 'Quiz from uploaded documents',
+            num_questions: 10,
+            document_id: documentId
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                currentQuiz = data.quiz;
+                quizData = data.questions;
+                currentQuestionIndex = 0;
+                userAnswers = new Array(quizData.length).fill(null);
+                showQuestion();
+            } else {
+                alert('Error generating quiz: ' + data.message);
+                closeQuizModal();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to generate quiz');
+            closeQuizModal();
+        });
+}
+
 
 function quizPrepChoice(choice) {
     if (choice === 'learn') {

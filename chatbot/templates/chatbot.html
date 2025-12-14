@@ -164,6 +164,63 @@
             </div>
         </div>
 
+        <!-- Step 1.5: Document Selection -->
+        <div class="quiz-step hidden" id="quizDocumentSelect">
+            <div class="quiz-header">
+                <h2>Select Document</h2>
+                <p>Choose from existing or upload new</p>
+            </div>
+            <div class="quiz-source-options">
+                <button class="quiz-source-btn" onclick="showExistingDocuments()">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>Existing Documents</h3>
+                    <p>Quiz from already uploaded files</p>
+                </button>
+                <button class="quiz-source-btn" onclick="showNewDocumentUpload()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Upload New</h3>
+                    <p>Upload files and create quiz</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 1.6: Existing Document List -->
+        <div class="quiz-step hidden" id="quizExistingDocs">
+            <div class="quiz-header">
+                <h2>Select Document for Quiz</h2>
+                <p>Choose from your uploaded documents</p>
+            </div>
+            <div id="existingDocsContainer" class="existing-docs-list">
+                <!-- Populated via JavaScript -->
+            </div>
+            <button class="btn-text" onclick="showQuizStep('quizDocumentSelect')" style="margin-top: 1rem;">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+        </div>
+
+        <!-- Step 1.7: New Document Upload -->
+        <div class="quiz-step hidden" id="quizNewDocUpload">
+            <div class="quiz-header">
+                <h2>Upload Documents</h2>
+                <p>Upload one or multiple files (PDF, DOCX, PPTX)</p>
+            </div>
+            <div class="quiz-upload-area">
+                <input type="file" id="quizFileInput" multiple accept=".pdf,.docx,.pptx" style="display: none"
+                    onchange="handleQuizFileUpload(event)">
+                <button class="btn-primary" onclick="document.getElementById('quizFileInput').click()">
+                    <i class="fas fa-upload"></i> Choose Files
+                </button>
+                <div id="quizUploadedFiles" class="uploaded-files-list"></div>
+                <button class="btn-primary" id="generateQuizFromDocs" onclick="generateQuizFromUploadedDocs()" disabled
+                    style="margin-top: 1rem;">
+                    Generate Quiz
+                </button>
+            </div>
+            <button class="btn-text" onclick="showQuizStep('quizDocumentSelect')" style="margin-top: 1rem;">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+        </div>
+
         <!-- Step 2: Prompt Options (for custom prompt) -->
         <div class="quiz-step hidden" id="quizPromptOptions">
             <div class="quiz-header">

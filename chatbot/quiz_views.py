@@ -350,11 +350,11 @@ def teach_topic(request):
                 'message': 'Topic required'
             }, status=400)
         
-        # Use Gemini to generate teaching content
+        # Use Gemini 2.5 Flash to generate teaching content
         teaching_content = generate_answer(
             query=f"Teach me about: {topic}. Provide a comprehensive explanation suitable for learning.",
             context="",
-            model_id='gemini-2.0-flash-exp'
+            model_id='gemini-2.5-flash'
         )
         
         # Save to learning track

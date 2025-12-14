@@ -27,7 +27,7 @@ def call_llm_api(model_id, messages, temperature=0.7, max_tokens=1024):
     Call LLM API for chat completions - supports both Gemini and Groq providers
     
     Args:
-        model_id: Model identifier (e.g., 'gemini-2.0-flash-exp', 'llama-3.1-8b-instant')
+        model_id: Model identifier (e.g., 'gemini-2.5-flash', 'llama-3.1-8b-instant')
         messages: List of message dicts with 'role' and 'content'
         temperature: Temperature for generation
         max_tokens: Maximum tokens to generate
@@ -36,7 +36,7 @@ def call_llm_api(model_id, messages, temperature=0.7, max_tokens=1024):
         Generated text response
     """
     # Determine provider based on model_id
-    gemini_models = ['gemini-2.0-flash-exp', 'gemini-2.0-flash-lite', 'gemini-2.5-flash']
+    gemini_models = ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-2.0-flash-lite']
     
     if model_id in gemini_models:
         return _call_gemini(model_id, messages, temperature, max_tokens)
@@ -50,6 +50,10 @@ def _call_gemini(model_id, messages, temperature, max_tokens):
     
     # Configure Gemini
     genai.configure(api_key=settings.GEMINI_API_KEY)
+    
+    # Use Gemini 2.5 Flash if the default model is specified
+    if model_id in ['gemini-2.0-flash-exp', 'gemini-2.0-flash-lite']:
+        model_id = 'gemini-2.5-flash'
     
     # Convert messages to Gemini format
     prompt_parts = []
@@ -285,7 +289,7 @@ def retrieve_relevant_chunks(query: str, document_id: int, k: int = 3) -> List[s
 
 
 def generate_answer(query: str, context: str, model_id: str = 'llama-3.1-8b-instant', chat_history: List[dict] = None) -> str:
-    """Generate answer using LLM with RAG context - supports multiple models"""
+    """Generate answer using LLM with RAG context - supports multiple models with fallback"""
     if chat_history is None:
         chat_history = []
     
@@ -323,7 +327,23 @@ Instructions:
         return answer
     
     except Exception as e:
+        error_str = str(e).lower()
         print(f"[ERROR] Error generating answer: {type(e).__name__}: {str(e)}")
+        
+        # If quota exhausted on Gemini, try Groq
+        if 'resource' in error_str or 'quota' in error_str or 'exhausted' in error_str:
+            print("[INFO] Gemini quota exhausted, switching to Groq...")
+            try:
+                # Try with Groq model
+                fallback_model = 'llama-3.3-70b-versatile'
+                print(f"[INFO] Retrying with Groq model: {fallback_model}")
+                answer = call_llm_api(fallback_model, messages, temperature=0.7, max_tokens=1024)
+                return answer
+            except Exception as fallback_error:
+                print(f"[ERROR] Groq fallback also failed: {fallback_error}")
+                return f"I'm sorry, both AI services are currently unavailable. Please try again later."
+        
+        # For other errors, return generic error
         import traceback
         traceback.print_exc()
         return f"I'm sorry, I encountered an error while generating the answer: {type(e).__name__}. Please check the server logs for details."

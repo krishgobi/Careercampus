@@ -1,0 +1,188 @@
+/* Document Selection UI */
+.existing-docs-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 1rem 0;
+}
+
+.doc-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-app);
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s var(--ease-smooth);
+    border: 1px solid transparent;
+}
+
+.doc-item:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border-color: var(--primary);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.doc-item i:first-child {
+    font-size: 2rem;
+    color: var(--primary);
+}
+
+.doc-item .doc-info {
+    flex: 1;
+}
+
+.doc-item .doc-info h4 {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.doc-item .doc-info small {
+    color: var(--text-muted);
+}
+
+.doc-item i:last-child {
+    color: var(--text-secondary);
+}
+
+/* Quiz Upload Area */
+.quiz-upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    background: var(--bg-app);
+    border-radius: 16px;
+    border: 2px dashed var(--border);
+}
+
+.uploaded-files-list {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.uploaded-file-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-white);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border);
+}
+
+.uploaded-file-item i {
+    font-size: 1.25rem;
+}
+
+.uploaded-file-item span {
+    flex: 1;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Enhanced Teaching Content Display */
+.teaching-content {
+    max-height: 65vh !important;
+    overflow-y: auto !important;
+    padding: 2.5rem !important;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05)) !important;
+    border-radius: 16px !important;
+    line-height: 1.9 !important;
+    margin-bottom: 2rem !important;
+    border: 1px solid rgba(99, 102, 241, 0.1) !important;
+    box-shadow: inset 0 2px 8px rgba(99, 102, 241, 0.08) !important;
+    font-size: 1.05rem !important;
+    color: var(--text-primary) !important;
+}
+
+.teaching-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.teaching-content::-webkit-scrollbar-track {
+    background: rgba(99, 102, 241, 0.05);
+    border-radius: 10px;
+}
+
+.teaching-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #6366f1, #a855f7);
+    border-radius: 10px;
+}
+
+.teaching-content h1,
+.teaching-content h2,
+.teaching-content h3 {
+    color: #6366f1 !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 1rem !important;
+    font-weight: 600 !important;
+}
+
+.teaching-content h1 {
+    font-size: 1.75rem !important;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #6366f1;
+}
+
+.teaching-content h2 {
+    font-size: 1.5rem !important;
+}
+
+.teaching-content h3 {
+    font-size: 1.25rem !important;
+}
+
+.teaching-content p {
+    margin-bottom: 1.25rem !important;
+    text-align: justify !important;
+}
+
+.teaching-content strong {
+    color: #a855f7 !important;
+    font-weight: 600 !important;
+}
+
+.teaching-content ul,
+.teaching-content ol {
+    margin-left: 2rem !important;
+    margin-bottom: 1.25rem !important;
+}
+
+.teaching-content li {
+    margin-bottom: 0.75rem !important;
+    padding-left: 0.5rem !important;
+}
+
+#teachingTopic {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+#proceedTo QuizBtn {
+    width: 100%;
+    max-width: 400px;
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    margin: 1rem auto 0;
+    display: block;
+    transition: all 0.3s ease;
+    border: none;
+    color: white;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+#proceedToQuizBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+}
