@@ -12,9 +12,11 @@ GitHub blocked your push because you had exposed secrets in your code.
 Add these two lines to `p:\antigravity\.env`:
 
 ```
-GOOGLE_OAUTH_CLIENT_ID=422490981886-9ch42297ev7n37nofk3fppf4vskkkr01.apps.googleusercontent.com
-GOOGLE_OAUTH_CLIENT_SECRET=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
+GOOGLE_OAUTH_CLIENT_ID=your_google_client_id_here
+GOOGLE_OAUTH_CLIENT_SECRET=your_google_client_secret_here
 ```
+
+**Note:** Use your actual credentials from Google Cloud Console
 
 **2. Commit the security fixes:**
 ```bash
