@@ -128,23 +128,50 @@ def chat_api(request):
         document_id = data.get('document_id')
         chat_id = data.get('chat_id')
         model_id = data.get('model_id', 'llama-3.1-8b-instant')  # Default model
+        learn_mode = data.get('learn_mode', False)
         
-        if not query or not document_id:
+        if not query:
             return JsonResponse({
                 'status': 'error',
-                'message': 'Missing message or document_id'
+                'message': 'Missing message'
             }, status=400)
         
         # Get model instance
         try:
             ai_model = AIModel.objects.get(model_id=model_id, is_active=True)
         except AIModel.DoesNotExist:
-            ai_model = AIModel.objects.get(model_id='llama-3.1-8b-instant')  # Fallback
+            # Try to get any active model as fallback
+            ai_model = AIModel.objects.filter(is_active=True).first()
+            if not ai_model:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No active AI models found. Please run setup_ai_chat.bat'
+                }, status=500)
         
+        # For learn mode, generate answer without RAG
+        if learn_mode or not document_id:
+            from .utils import call_llm_api
+            
+            # Build messages for LLM
+            messages = [
+                {'role': 'user', 'content': query}
+            ]
+            
+            # Simple direct call to LLM
+            answer = call_llm_api(model_id, messages)
+            
+            return JsonResponse({
+                'status': 'success',
+                'answer': answer,
+                'chat_id': None,
+                'prompt_count': 0,
+                'need_feedback': False
+            })
+        
+        # Regular chat mode with RAG
         # Get or create chat
         if chat_id:
             chat = get_object_or_404(Chat, id=chat_id)
-            # Update selected model if different
             if chat.selected_model != ai_model:
                 chat.selected_model = ai_model
                 chat.save()
@@ -179,10 +206,10 @@ def chat_api(request):
         usage.prompt_count += 1
         usage.save()
         
-        # Check if feedback is needed (every 10 prompts after last feedback)
+        # Check if feedback is needed
         need_feedback = (usage.prompt_count - usage.last_feedback_at) >= 10
         
-        # Process query with RAG (pass model_id)
+        # Process query with RAG
         from .utils import generate_answer, retrieve_relevant_chunks
         chunks = retrieve_relevant_chunks(query, document_id)
         context = "\n\n".join(chunks)

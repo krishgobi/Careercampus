@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ paper.title }} - கற்றல் AI{% endblock %}
+
+{% block content %}
+<div class="question-paper-view">
+    <div class="paper-header">
+        <div class="paper-info">
+            <h1>{{ paper.title }}</h1>
+            <div class="paper-meta">
+                <span class="badge">{{ paper.get_paper_type_display }}</span>
+                <span class="subject">{{ paper.subject }}</span>
+                <span class="date">{{ paper.created_at|date:"M d, Y" }}</span>
+            </div>
+        </div>
+        <div class="paper-actions">
+            <a href="/api/question-paper/{{ paper.id }}/export/" class="btn-download" download>
+                <i class="fas fa-file-pdf"></i> Download PDF
+            </a>
+            <button class="btn-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <div class="questions-container">
+        {% for marks, questions in questions_by_marks.items %}
+        <div class="question-section">
+            <h2>{{ marks }} Marks Questions</h2>
+            <div class="questions-list">
+                {% for question in questions %}
+                <div class="question-card">
+                    <div class="question-number">{{ forloop.counter }}</div>
+                    <div class="question-content">
+                        <p class="question-text">{{ question.question_text }}</p>
+                        {% if question.answer_hint %}
+                        <div class="question-hint">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>{{ question.answer_hint }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .question-paper-view {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .paper-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .paper-info h1 {
+        font-size: 2rem;
+        color: #1e293b;
+        margin-bottom: 1rem;
+    }
+
+    .paper-meta {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .badge {
+        padding: 0.375rem 0.875rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .subject {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .date {
+        color: #94a3b8;
+        font-size: 0.875rem;
+    }
+
+    .paper-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-download,
+    .btn-secondary {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-download {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+
+    .btn-download:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+        background: #f8fafc;
+    }
+
+    .question-section {
+        margin-bottom: 3rem;
+    }
+
+    .question-section h2 {
+        font-size: 1.5rem;
+        color: #667eea;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .questions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .question-card {
+        display: flex;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+    }
+
+    .question-card:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .question-number {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        font-weight: 700;
+        font-size: 1.125rem;
+    }
+
+    .question-content {
+        flex: 1;
+    }
+
+    .question-text {
+        font-size: 1.0625rem;
+        color: #1e293b;
+        line-height: 1.6;
+        margin-bottom: 0.75rem;
+    }
+
+    .question-hint {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background: #f8fafc;
+        border-left: 3px solid #667eea;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        color: #64748b;
+    }
+
+    .question-hint i {
+        color: #667eea;
+        margin-top: 0.125rem;
+    }
+
+    @media print {
+        .paper-actions {
+            display: none;
+        }
+
+        .question-card {
+            box-shadow: none;
+            border: 1px solid #e2e8f0;
+            break-inside: avoid;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .question-paper-view {
+            padding: 1rem;
+        }
+
+        .paper-header {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .paper-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .btn-download,
+        .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}

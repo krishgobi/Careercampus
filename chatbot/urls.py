@@ -49,5 +49,6 @@ urlpatterns = [
     path('api/question-paper/predict/', question_paper_views.predict_questions, name='predict_questions'),
     path('api/question-paper/<int:paper_id>/export/', question_paper_views.export_pdf, name='export_question_paper'),
     path('question-paper/<int:paper_id>/', question_paper_views.view_paper, name='view_paper'),
+    path('question-paper/<int:paper_id>/learn/', question_paper_views.learn_mode, name='learn_mode'),
 ]
 

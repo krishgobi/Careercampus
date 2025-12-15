@@ -1,0 +1,54 @@
+[
+  {
+    "model": "chatbot.aimodel",
+    "pk": 1,
+    "fields": {
+      "name": "Llama 3.1 8B",
+      "model_id": "llama-3.1-8b-instant",
+      "provider": "groq",
+      "description": "Fast and efficient model for general tasks",
+      "use_cases": "General chat,Quick responses,Code assistance",
+      "strength": "Speed and efficiency",
+      "is_active": true
+    }
+  },
+  {
+    "model": "chatbot.aimodel",
+    "pk": 2,
+    "fields": {
+      "name": "Llama 3.3 70B",
+      "model_id": "llama-3.3-70b-versatile",
+      "provider": "groq",
+      "description": "Powerful model for complex reasoning and analysis",
+      "use_cases": "Complex analysis,Detailed explanations,Research",
+      "strength": "Advanced reasoning and comprehension",
+      "is_active": true
+    }
+  },
+  {
+    "model": "chatbot.aimodel",
+    "pk": 3,
+    "fields": {
+      "name": "Gemini 2.0 Flash",
+      "model_id": "gemini-2.0-flash-exp",
+      "provider": "gemini",
+      "description": "Google's latest fast model with multimodal capabilities",
+      "use_cases": "Document analysis,Summarization,Creative writing",
+      "strength": "Multimodal understanding and speed",
+      "is_active": true
+    }
+  },
+  {
+    "model": "chatbot.aimodel",
+    "pk": 4,
+    "fields": {
+      "name": "Mixtral 8x7B",
+      "model_id": "mixtral-8x7b-32768",
+      "provider": "groq",
+      "description": "Mixture of experts model with large context window",
+      "use_cases": "Long documents,Detailed analysis,Code generation",
+      "strength": "Large context window (32k tokens)",
+      "is_active": true
+    }
+  }
+]

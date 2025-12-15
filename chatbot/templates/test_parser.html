@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Question Parser</title>
+</head>
+
+<body>
+    <h1>Test Natural Language Parser</h1>
+
+    <form id="test-form">
+        <label>Enter requirements:</label><br>
+        <textarea id="requirements" rows="3"
+            style="width: 400px;">10 two mark questions, 5 five mark questions</textarea><br><br>
+        <button type="submit">Test Parse</button>
+    </form>
+
+    <div id="result" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+
+    <script>
+        document.getElementById('test-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const requirements = document.getElementById('requirements').value;
+            const formData = new FormData();
+            formData.append('requirements', requirements);
+            formData.append('source_type', 'topic');
+            formData.append('topic', 'Test topic');
+            formData.append('subject', 'Test');
+
+            console.log('Sending requirements:', requirements);
+
+            try {
+                const response = await fetch('/api/question-paper/generate/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                document.getElementById('result').innerHTML = `
+                    <h3>Response:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <h3>Error:</h3>
+                    <pre>${error}</pre>
+                `;
+            }
+        });
+    </script>
+</body>
+
+</html>

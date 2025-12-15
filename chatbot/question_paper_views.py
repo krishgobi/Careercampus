@@ -30,8 +30,27 @@ def generate_important_questions(request):
         # Get form data
         source_type = request.POST.get('source_type')  # 'topic' or 'document'
         subject = request.POST.get('subject', 'General')
-        marks_str = request.POST.get('marks', '2,5,10')
-        marks_list = [int(m.strip()) for m in marks_str.split(',')]
+        requirements_text = request.POST.get('requirements', '')
+        
+        print(f"[DEBUG] source_type: {source_type}")
+        print(f"[DEBUG] subject: {subject}")
+        print(f"[DEBUG] requirements_text: '{requirements_text}'")
+        print(f"[DEBUG] POST data: {dict(request.POST)}")
+        
+        # Parse natural language requirements
+        from .nl_parser import parse_question_requirements, validate_requirements
+        requirements = parse_question_requirements(requirements_text)
+        
+        print(f"[DEBUG] Parsed requirements: {requirements}")
+        
+        # Validate
+        is_valid, error_msg = validate_requirements(requirements)
+        print(f"[DEBUG] Validation: is_valid={is_valid}, error_msg='{error_msg}'")
+        
+        if not is_valid:
+            return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
+        
+        marks_list = list(requirements.keys())
         
         # Get content
         if source_type == 'topic':
@@ -57,8 +76,8 @@ def generate_important_questions(request):
             
             title = f"Important Questions - {file.name}"
         
-        # Generate questions using AI
-        questions_by_marks = generate_important_questions_ai(content, marks_list, subject)
+        # Generate questions using AI with specific counts
+        questions_by_marks = generate_important_questions_ai(content, requirements, subject)
         
         # Save to database
         paper = QuestionPaper.objects.create(
@@ -103,8 +122,22 @@ def predict_questions(request):
         print("[VIEW] Predicting questions from previous papers...")
         
         subject = request.POST.get('subject', 'General')
-        marks_str = request.POST.get('marks', '1,2,3')
-        marks_list = [int(m.strip()) for m in marks_str.split(',')]
+        requirements_text = request.POST.get('requirements', '')
+        
+        # Parse requirements (now comes as JSON)
+        import json
+        try:
+            requirements = json.loads(requirements_text)
+            requirements = {int(k): v for k, v in requirements.items()}
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({'status': 'error', 'message': 'Invalid requirements format'}, status=400)
+        
+        from .nl_parser import validate_requirements
+        is_valid, error_msg = validate_requirements(requirements)
+        if not is_valid:
+            return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
+        
+        marks_list = list(requirements.keys())
         
         # Get uploaded files
         files = request.FILES.getlist('previous_papers')
@@ -204,4 +237,32 @@ def view_paper(request, paper_id):
     return render(request, 'view_paper.html', {
         'paper': paper,
         'questions_by_marks': dict(sorted(questions_by_marks.items()))
+    })
+
+
+def learn_mode(request, paper_id):
+    """Learn mode with AI chat for questions"""
+    from .models import AIModel
+    
+    paper = QuestionPaper.objects.get(id=paper_id)
+    questions = GeneratedQuestion.objects.filter(paper=paper)
+    
+    # Organize by marks
+    questions_by_marks = {}
+    total_questions = 0
+    for q in questions:
+        marks = q.marks
+        if marks not in questions_by_marks:
+            questions_by_marks[marks] = []
+        questions_by_marks[marks].append(q)
+        total_questions += 1
+    
+    # Get AI models suitable for learning
+    ai_models = AIModel.objects.filter(is_active=True)
+    
+    return render(request, 'learn_mode.html', {
+        'paper': paper,
+        'questions_by_marks': dict(sorted(questions_by_marks.items())),
+        'total_questions': total_questions,
+        'ai_models': ai_models
     })

@@ -68,21 +68,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Select Mark Types</label>
-                    <div class="marks-chips">
-                        <label class="chip-label">
-                            <input type="checkbox" name="marks" value="2" checked>
-                            <span class="chip">2 Marks</span>
-                        </label>
-                        <label class="chip-label">
-                            <input type="checkbox" name="marks" value="5" checked>
-                            <span class="chip">5 Marks</span>
-                        </label>
-                        <label class="chip-label">
-                            <input type="checkbox" name="marks" value="10" checked>
-                            <span class="chip">10 Marks</span>
-                        </label>
-                    </div>
+                    <label for="requirements">What questions do you need?</label>
+                    <input type="text" id="requirements" name="requirements"
+                        value="10 questions of 2 marks, 5 questions of 5 marks"
+                        placeholder="e.g., 10 questions of 2 marks, 5 questions of 5 marks">
+                    <small class="form-hint">Describe the questions you want</small>
                 </div>
 
                 <button type="submit" class="btn-generate">
@@ -119,25 +109,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Select Mark Types for Prediction</label>
-                    <div class="marks-chips">
-                        <label class="chip-label">
-                            <input type="checkbox" name="pred-marks" value="1" checked>
-                            <span class="chip">1 Mark</span>
-                        </label>
-                        <label class="chip-label">
-                            <input type="checkbox" name="pred-marks" value="2" checked>
-                            <span class="chip">2 Marks</span>
-                        </label>
-                        <label class="chip-label">
-                            <input type="checkbox" name="pred-marks" value="3" checked>
-                            <span class="chip">3 Marks</span>
-                        </label>
-                        <label class="chip-label">
-                            <input type="checkbox" name="pred-marks" value="5">
-                            <span class="chip">5 Marks</span>
-                        </label>
-                    </div>
+                    <label for="pred-requirements">What questions do you need?</label>
+                    <input type="text" id="pred-requirements" name="requirements"
+                        value="15 questions of 1 mark, 10 questions of 2 marks"
+                        placeholder="e.g., 15 questions of 1 mark, 10 questions of 2 marks">
+                    <small class="form-hint">Describe the questions you want predicted</small>
                 </div>
 
                 <button type="submit" class="btn-generate">
@@ -158,6 +134,9 @@
         <div class="results-header">
             <h2>Generated Questions</h2>
             <div class="results-actions">
+                <button class="btn-learn" id="learn-btn">
+                    <i class="fas fa-graduation-cap"></i> Learn with AI
+                </button>
                 <button class="btn-secondary" id="export-pdf">
                     <i class="fas fa-file-pdf"></i> Export PDF
                 </button>

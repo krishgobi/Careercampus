@@ -267,6 +267,27 @@
     transform: translateY(-2px);
 }
 
+.btn-learn {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-learn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-learn i {
+    margin-right: 0.5rem;
+}
+
 /* Loading Overlay */
 .loading-overlay {
     position: fixed;

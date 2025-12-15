@@ -183,6 +183,8 @@ class QuestionPaper(models.Model):
     source_document = models.ForeignKey(Document, on_delete=models.SET_NULL, null=True, blank=True)
     source_topic = models.TextField(blank=True)
     session_key = models.CharField(max_length=100, blank=True)
+    rating = models.IntegerField(null=True, blank=True)  # 1-5 stars
+    user_email = models.EmailField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

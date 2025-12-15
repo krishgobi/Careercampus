@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Learn - {{ paper.title }}{% endblock %}
+
+{% block content %}
+<div class="learn-container">
+    <div class="learn-header">
+        <h1><i class="fas fa-graduation-cap"></i> Learn Mode</h1>
+        <p>Get AI-powered explanations and answers for your questions</p>
+        <div class="paper-info">
+            <span class="badge">{{ paper.subject }}</span>
+            <span class="question-count">{{ total_questions }} Questions</span>
+        </div>
+    </div>
+
+    <div class="learn-layout">
+        <!-- Questions Sidebar -->
+        <div class="questions-sidebar">
+            <h3>Questions</h3>
+            <div class="questions-list">
+                {% for marks, questions in questions_by_marks.items %}
+                <div class="marks-group">
+                    <div class="marks-header">{{ marks }} Marks</div>
+                    {% for question in questions %}
+                    <div class="question-item" data-question-id="{{ question.id }}"
+                        onclick="selectQuestion({{ question.id }}, '{{ question.question_text|escapejs }}', {{ marks }})">
+                        <span class="q-number">Q{{ forloop.counter }}</span>
+                        <span class="q-text">{{ question.question_text|truncatewords:10 }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- AI Chat Interface -->
+        <div class="chat-interface">
+            <div class="current-question" id="current-question">
+                <p class="placeholder">Select a question from the left to start learning</p>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="welcome-message">
+                    <i class="fas fa-robot"></i>
+                    <p>Hi! I'm your AI tutor. Select a question and I'll help you understand it better!</p>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="model-selector">
+                    <select id="ai-model">
+                        {% for model in ai_models %}
+                        <option value="{{ model.model_id }}">{{ model.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="input-wrapper">
+                    <textarea id="user-input" placeholder="Ask about this question..." rows="2"></textarea>
+                    <button id="send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .learn-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .learn-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .learn-header h1 {
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .paper-info {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1rem;
+    }
+
+    .question-count {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .learn-layout {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 2rem;
+        height: calc(100vh - 250px);
+    }
+
+    .questions-sidebar {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        overflow-y: auto;
+    }
+
+    .questions-sidebar h3 {
+        margin-bottom: 1rem;
+        color: #1e293b;
+    }
+
+    .marks-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .marks-header {
+        font-weight: 700;
+        color: #10b981;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .question-item {
+        display: flex;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .question-item:hover {
+        background: #e0f2fe;
+        transform: translateX(4px);
+    }
+
+    .question-item.active {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .q-number {
+        flex-shrink: 0;
+        font-weight: 700;
+        color: #10b981;
+    }
+
+    .question-item.active .q-number {
+        color: white;
+    }
+
+    .q-text {
+        font-size: 0.875rem;
+        line-height: 1.4;
+    }
+
+    .chat-interface {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .current-question {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .current-question .placeholder {
+        text-align: center;
+        opacity: 0.9;
+    }
+
+    .current-question .question-display {
+        font-size: 1.125rem;
+        line-height: 1.6;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+
+    .welcome-message {
+        text-align: center;
+        padding: 2rem;
+        color: #64748b;
+    }
+
+    .welcome-message i {
+        font-size: 3rem;
+        color: #10b981;
+        margin-bottom: 1rem;
+    }
+
+    .message {
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .message.user {
+        justify-content: flex-end;
+    }
+
+    .message-content {
+        max-width: 70%;
+        padding: 1rem;
+        border-radius: 12px;
+        line-height: 1.6;
+    }
+
+    .message.user .message-content {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .message.ai .message-content {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    .chat-input-area {
+        padding: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .model-selector {
+        margin-bottom: 0.75rem;
+    }
+
+    .model-selector select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.875rem;
+    }
+
+    .input-wrapper {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .input-wrapper textarea {
+        flex: 1;
+        padding: 0.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        resize: none;
+        font-family: inherit;
+    }
+
+    .input-wrapper textarea:focus {
+        outline: none;
+        border-color: #10b981;
+    }
+
+    #send-btn {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    #send-btn:hover {
+        transform: scale(1.05);
+    }
+
+    @media (max-width: 1024px) {
+        .learn-layout {
+            grid-template-columns: 1fr;
+            height: auto;
+        }
+
+        .questions-sidebar {
+            max-height: 300px;
+        }
+
+        .chat-interface {
+            height: 600px;
+        }
+    }
+</style>
+
+<script>
+    let currentQuestionId = null;
+    let currentQuestionText = '';
+    let currentMarks = 0;
+
+    function selectQuestion(id, text, marks) {
+        currentQuestionId = id;
+        currentQuestionText = text;
+        currentMarks = marks;
+
+        // Update active state
+        document.querySelectorAll('.question-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        event.currentTarget.classList.add('active');
+
+        // Display question
+        document.getElementById('current-question').innerHTML = `
+        <div class="question-display">
+            <strong>${marks} Marks:</strong> ${text}
+        </div>
+    `;
+
+        // Clear chat and show initial message
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.innerHTML = `
+        <div class="message ai">
+            <div class="message-content">
+                <p>I can help you with this ${marks}-mark question. What would you like to know?</p>
+                <p style="margin-top: 0.5rem; font-size: 0.875rem; opacity: 0.8;">
+                    You can ask for:
+                    <br>• A complete answer
+                    <br>• Key points to remember
+                    <br>• Examples or explanations
+                </p>
+            </div>
+        </div>
+    `;
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('user-input');
+        const message = input.value.trim();
+
+        if (!message || !currentQuestionText) return;
+
+        // Add user message
+        addMessage(message, 'user');
+        input.value = '';
+
+        // Get selected model
+        const modelId = document.getElementById('ai-model').value;
+
+        // Show typing indicator
+        const typingId = addMessage('Thinking...', 'ai');
+
+        try {
+            const response = await fetch('/api/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: `Question: ${currentQuestionText}\n\nUser query: ${message}`,
+                    model_id: modelId,
+                    context: `This is a ${currentMarks}-mark exam question. Please provide a helpful, educational response.`
+                })
+            });
+
+            const data = await response.json();
+
+            // Remove typing indicator
+            document.getElementById(typingId).remove();
+
+            // Add AI response - API returns 'answer' not 'response'
+            if (data.status === 'success' && data.answer) {
+                addMessage(data.answer, 'ai');
+            } else {
+                addMessage('Sorry, could not get response. ' + (data.message || ''), 'ai');
+            }
+
+        } catch (error) {
+            document.getElementById(typingId).remove();
+            addMessage('Sorry, I encountered an error. Please try again.', 'ai');
+        }
+    }
+
+    function addMessage(text, type) {
+        const chatMessages = document.getElementById('chat-messages');
+        const messageId = 'msg-' + Date.now();
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.id = messageId;
+        messageDiv.innerHTML = `
+        <div class="message-content">${text}</div>
+    `;
+
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        return messageId;
+    }
+
+    // Allow Enter to send
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('user-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,5 +1,22 @@
 // Question Paper Generator JavaScript
 
+// Parse requirements from text like "10 questions of 2 marks, 5 questions of 5 marks"
+function parseRequirements(text) {
+    const requirements = {};
+
+    // Match patterns like "10 questions of 2 marks" or "5 of 5 marks"
+    const pattern = /(\d+)\s*(?:questions?\s*)?of\s*(\d+)\s*marks?/gi;
+    const matches = text.matchAll(pattern);
+
+    for (const match of matches) {
+        const count = parseInt(match[1]);
+        const marks = parseInt(match[2]);
+        requirements[marks] = count;
+    }
+
+    return requirements;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Tab switching
     const tabs = document.querySelectorAll('.qp-tab');
@@ -78,14 +95,21 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('document', docFile);
         }
 
-        // Get selected marks
-        const selectedMarks = Array.from(document.querySelectorAll('input[name="marks"]:checked'))
-            .map(cb => cb.value);
-        if (selectedMarks.length === 0) {
-            alert('Please select at least one mark type');
+        // Get and parse requirements
+        const requirementsText = document.getElementById('requirements').value.trim();
+        if (!requirementsText) {
+            alert('Please specify what questions you need (e.g., "10 questions of 2 marks")');
             return;
         }
-        formData.append('marks', selectedMarks.join(','));
+
+        const requirements = parseRequirements(requirementsText);
+
+        if (Object.keys(requirements).length === 0) {
+            alert('Could not understand requirements. Try: "10 questions of 2 marks, 5 questions of 5 marks"');
+            return;
+        }
+
+        formData.append('requirements', JSON.stringify(requirements));
 
         // Show loading
         document.getElementById('loading').classList.remove('hidden');
@@ -135,14 +159,21 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('previous_papers', file);
         });
 
-        // Get selected marks
-        const selectedMarks = Array.from(document.querySelectorAll('input[name="pred-marks"]:checked'))
-            .map(cb => cb.value);
-        if (selectedMarks.length === 0) {
-            alert('Please select at least one mark type');
+        // Get and parse requirements
+        const requirementsText = document.getElementById('pred-requirements').value.trim();
+        if (!requirementsText) {
+            alert('Please specify what questions you need (e.g., "15 questions of 1 mark")');
             return;
         }
-        formData.append('marks', selectedMarks.join(','));
+
+        const requirements = parseRequirements(requirementsText);
+
+        if (Object.keys(requirements).length === 0) {
+            alert('Could not understand requirements. Try: "15 questions of 1 mark, 10 questions of 2 marks"');
+            return;
+        }
+
+        formData.append('requirements', JSON.stringify(requirements));
 
         // Show loading
         document.getElementById('loading').classList.remove('hidden');
@@ -222,6 +253,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const paperId = this.dataset.paperId;
         if (paperId) {
             window.location.href = `/question-paper/${paperId}/`;
+        }
+    });
+
+    // Learn Mode
+    document.getElementById('learn-btn').addEventListener('click', function () {
+        const paperId = document.getElementById('export-pdf').dataset.paperId;
+        if (paperId) {
+            window.location.href = `/question-paper/${paperId}/learn/`;
         }
     });
 });

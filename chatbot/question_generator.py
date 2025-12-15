@@ -9,29 +9,30 @@ from django.conf import settings
 from .utils import extract_text_from_file
 
 
-def generate_important_questions_ai(content, marks_list, subject=""):
+def generate_important_questions_ai(content, requirements, subject=""):
     """
-    Generate important questions from content based on specified marks
+    Generate important questions from content based on specified requirements
     
     Args:
         content: Text content (from topic or document)
-        marks_list: List of mark values [2, 5, 10]
+        requirements: Dict of {marks: count} e.g., {2: 10, 5: 5, 10: 3}
         subject: Subject name (optional)
         
     Returns:
         Dict with questions organized by marks
     """
-    print(f"[QUESTION GEN] Generating questions for marks: {marks_list}")
+    print(f"[QUESTION GEN] Generating questions for requirements: {requirements}")
     
-    # Build prompt
-    marks_str = ", ".join([f"{m} marks" for m in marks_list])
-    prompt = f"""Generate important exam questions from the following content.
+    # Build detailed prompt with specific counts
+    requirements_text = ", ".join([f"{count} {marks}-mark questions" for marks, count in requirements.items()])
+    prompt = f"""Generate exam questions from the following content.
 
 Subject: {subject or 'General'}
 Content:
 {content[:8000]}
 
-Generate questions for these mark categories: {marks_str}
+Generate exactly these questions:
+{requirements_text}
 
 For each mark category, create appropriate questions:
 - 2 marks: Short answer questions (1-2 sentences)
@@ -113,7 +114,7 @@ Generate at least 5 questions for each mark category.
         print(f"[ERROR] Gemini failed: {e}")
     
     # Return fallback
-    return generate_fallback_questions(marks_list)
+    return generate_fallback_questions(list(requirements.keys()))
 
 
 def predict_questions_from_papers(papers_content, subject, mark_types):
