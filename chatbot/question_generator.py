@@ -25,37 +25,40 @@ def generate_important_questions_ai(content, requirements, subject=""):
     
     # Build detailed prompt with specific counts
     requirements_text = ", ".join([f"{count} {marks}-mark questions" for marks, count in requirements.items()])
+    
+    # Build JSON structure example based on actual requirements
+    json_structure = {}
+    for marks, count in requirements.items():
+        json_structure[str(marks)] = [
+            {"question": "Question text here", "hint": "Brief hint for answer"}
+            for _ in range(min(count, 2))  # Show 2 examples
+        ]
+    
+    json_example = json.dumps(json_structure, indent=2)
+    
     prompt = f"""Generate exam questions from the following content.
 
 Subject: {subject or 'General'}
 Content:
 {content[:8000]}
 
-Generate exactly these questions:
+STRICT REQUIREMENT - Generate EXACTLY these questions (no more, no less):
 {requirements_text}
 
 For each mark category, create appropriate questions:
 - 2 marks: Short answer questions (1-2 sentences)
 - 5 marks: Medium answer questions (1 paragraph)
 - 10 marks: Long answer/essay questions (detailed explanation)
+- 15 marks: Very detailed essay questions (comprehensive explanation)
 
-Return ONLY a JSON object in this format:
-{{
-  "2": [
-    {{"question": "Question text here", "hint": "Brief hint for answer"}},
-    ...
-  ],
-  "5": [
-    {{"question": "Question text here", "hint": "Brief hint for answer"}},
-    ...
-  ],
-  "10": [
-    {{"question": "Question text here", "hint": "Brief hint for answer"}},
-    ...
-  ]
-}}
+Return ONLY a JSON object in this exact format:
+{json_example}
 
-Generate at least 5 questions for each mark category.
+CRITICAL: 
+1. Generate the EXACT number of questions specified for each mark category
+2. If asked for "2 two-mark questions", generate ONLY 2 questions in the "2" category
+3. Do NOT add extra questions
+4. Do NOT generate questions for mark categories not requested
 """
     
     # Try Groq first
@@ -68,7 +71,7 @@ Generate at least 5 questions for each mark category.
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert question paper generator. Return ONLY valid JSON, no markdown."
+                    "content": "You are an expert question paper generator. You MUST generate EXACTLY the number of questions requested for each mark category. Return ONLY valid JSON, no markdown, no extra text. Follow the requirements PRECISELY."
                 },
                 {
                     "role": "user",
@@ -117,24 +120,37 @@ Generate at least 5 questions for each mark category.
     return generate_fallback_questions(list(requirements.keys()))
 
 
-def predict_questions_from_papers(papers_content, subject, mark_types):
+def predict_questions_from_papers(papers_content, subject, requirements):
     """
     Analyze previous papers and predict likely questions
     
     Args:
         papers_content: List of text content from previous papers
         subject: Subject name
-        mark_types: List of mark values to generate [1, 2, 3, etc.]
+        requirements: Dict of {marks: count} e.g., {2: 10, 5: 5}
         
     Returns:
         Dict with predicted questions organized by marks
     """
     print(f"[PREDICTION] Analyzing {len(papers_content)} previous papers")
+    print(f"[PREDICTION] Requirements: {requirements}")
     
     # Combine all papers
     combined_content = "\n\n---PAPER SEPARATOR---\n\n".join(papers_content[:5])  # Max 5 papers
     
-    marks_str = ", ".join([f"{m} marks" for m in mark_types])
+    # Build requirements text
+    requirements_text = ", ".join([f"{count} {marks}-mark questions" for marks, count in requirements.items()])
+    
+    # Build JSON structure example
+    json_structure = {}
+    for marks, count in requirements.items():
+        json_structure[str(marks)] = [
+            {"question": "Predicted question", "reasoning": "Why this is likely"}
+            for _ in range(min(count, 2))  # Show 2 examples
+        ]
+    
+    json_example = json.dumps(json_structure, indent=2)
+    
     prompt = f"""Analyze these previous year question papers and predict likely exam questions.
 
 Subject: {subject}
@@ -142,7 +158,8 @@ Subject: {subject}
 Previous Papers:
 {combined_content[:10000]}
 
-Based on patterns in these papers, predict important questions for: {marks_str}
+Based on patterns in these papers, predict EXACTLY these questions (no more, no less):
+{requirements_text}
 
 Consider:
 1. Frequently asked topics
@@ -150,20 +167,10 @@ Consider:
 3. Important concepts that appear multiple times
 4. Logical progression of difficulty
 
-Return ONLY a JSON object in this format:
-{{
-  "1": [
-    {{"question": "Predicted question", "reasoning": "Why this is likely"}},
-    ...
-  ],
-  "2": [
-    {{"question": "Predicted question", "reasoning": "Why this is likely"}},
-    ...
-  ],
-  ...
-}}
+Return ONLY a JSON object in this exact format:
+{json_example}
 
-Generate at least 5-8 questions for each mark category.
+IMPORTANT: Generate the EXACT number of questions specified for each mark category.
 """
     
     # Try Groq first

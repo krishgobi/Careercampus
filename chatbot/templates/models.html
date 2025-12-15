@@ -61,6 +61,9 @@
                             `).join('')}
                         </div>
                     ` : ''}
+                    <button class="btn-review" onclick="showReviewForm('${model.model_id}', '${model.name}')">
+                        <i class="fas fa-star"></i> Write a Review
+                    </button>
                 </div>
             `).join('') + '</div>';
 
@@ -68,6 +71,115 @@
         } catch (error) {
             console.error('Error loading models page:', error);
             document.getElementById('modelsPage').innerHTML = '<p class="empty-state">Error loading models. Please try again.</p>';
+        }
+    }
+
+    // Show review form
+    function showReviewForm(modelId, modelName) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay active';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-star"></i> Review ${modelName}</h3>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="review-form">
+                        <div class="rating-input">
+                            <label>Your Rating:</label>
+                            <div class="star-rating" id="starRating">
+                                <i class="far fa-star" data-rating="1"></i>
+                                <i class="far fa-star" data-rating="2"></i>
+                                <i class="far fa-star" data-rating="3"></i>
+                                <i class="far fa-star" data-rating="4"></i>
+                                <i class="far fa-star" data-rating="5"></i>
+                            </div>
+                        </div>
+                        <div class="comment-input">
+                            <label>Your Comment (optional):</label>
+                            <textarea id="reviewComment" placeholder="Share your experience with this model..." rows="4"></textarea>
+                        </div>
+                        <button class="btn-primary" onclick="submitReview('${modelId}')">
+                            <i class="fas fa-paper-plane"></i> Submit Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Star rating interaction
+        const stars = modal.querySelectorAll('.star-rating i');
+        let selectedRating = 0;
+
+        stars.forEach(star => {
+            star.addEventListener('click', function () {
+                selectedRating = parseInt(this.dataset.rating);
+                updateStars(selectedRating);
+            });
+
+            star.addEventListener('mouseenter', function () {
+                const rating = parseInt(this.dataset.rating);
+                updateStars(rating);
+            });
+        });
+
+        modal.querySelector('.star-rating').addEventListener('mouseleave', function () {
+            updateStars(selectedRating);
+        });
+
+        function updateStars(rating) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.className = 'fas fa-star';
+                } else {
+                    star.className = 'far fa-star';
+                }
+            });
+        }
+
+        // Store rating for submission
+        modal.dataset.rating = selectedRating;
+        modal.querySelector('.star-rating').addEventListener('click', function () {
+            modal.dataset.rating = selectedRating;
+        });
+    }
+
+    // Submit review
+    async function submitReview(modelId) {
+        const modal = document.querySelector('.modal-overlay');
+        const rating = parseInt(modal.dataset.rating);
+        const comment = document.getElementById('reviewComment').value.trim();
+
+        if (!rating || rating < 1) {
+            alert('Please select a rating');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/feedback/submit/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model_id: modelId,
+                    rating: rating,
+                    comment: comment
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                alert('Thank you for your review!');
+                modal.remove();
+                loadModelsPage(); // Reload to show new review
+            } else {
+                alert('Error submitting review: ' + (data.message || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error submitting review:', error);
+            alert('Error submitting review');
         }
     }
 

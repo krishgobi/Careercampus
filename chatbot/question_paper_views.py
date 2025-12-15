@@ -162,8 +162,8 @@ def predict_questions(request):
             
             papers_content.append(text)
         
-        # Predict questions using AI
-        questions_by_marks = predict_questions_from_papers(papers_content, subject, marks_list)
+        # Predict questions using AI with exact requirements
+        questions_by_marks = predict_questions_from_papers(papers_content, subject, requirements)
         
         # Save to database
         paper = QuestionPaper.objects.create(

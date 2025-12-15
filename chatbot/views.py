@@ -112,9 +112,11 @@ def chat_interface(request):
     """Render chatbot interface"""
     documents = Document.objects.all()
     chats = Chat.objects.all()
+    ai_models = AIModel.objects.filter(is_active=True)
     return render(request, 'chatbot.html', {
         'documents': documents,
-        'chats': chats
+        'chats': chats,
+        'ai_models': ai_models
     })
 
 
@@ -208,6 +210,29 @@ def chat_api(request):
         
         # Check if feedback is needed
         need_feedback = (usage.prompt_count - usage.last_feedback_at) >= 10
+        
+        # Check if using Wikipedia
+        if ai_model.provider == 'wikipedia':
+            from .wikipedia_api import wikipedia_answer
+            
+            # Use Wikipedia to answer
+            answer = wikipedia_answer(query)
+            
+            # Save assistant message
+            Message.objects.create(
+                chat=chat,
+                role='assistant',
+                content=answer,
+                model_used=ai_model
+            )
+            
+            return JsonResponse({
+                'status': 'success',
+                'chat_id': chat.id,
+                'answer': answer,
+                'prompt_count': usage.prompt_count,
+                'need_feedback': need_feedback
+            })
         
         # Check if using local DistilGPT2 model
         if ai_model.provider == 'local' and ai_model.model_id == 'distilgpt2':
@@ -550,3 +575,32 @@ def wikipedia_api(request):
             'status': 'error',
             'message': str(e)
         })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def delete_document(request, document_id):
+    """Delete a document and its file"""
+    try:
+        document = get_object_or_404(Document, id=document_id)
+        
+        # Delete the file from storage
+        if document.file:
+            try:
+                document.file.delete(save=False)
+            except:
+                pass  # File might already be deleted
+        
+        # Delete from database
+        document.delete()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Document deleted successfully'
+        })
+    except Exception as e:
+        print(f"Error deleting document: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)

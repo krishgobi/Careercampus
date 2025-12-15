@@ -540,3 +540,108 @@ def submit_quiz_instant(request):
             'message': str(e)
         }, status=500)
 
+
+# ===== Quiz Analytics =====
+
+from django.shortcuts import render
+from django.db.models import Avg, Count
+from datetime import datetime, timedelta
+
+def quiz_analytics_page(request):
+    """Render quiz analytics page"""
+    return render(request, 'quiz_analytics.html')
+
+
+@require_http_methods(["GET"])
+def get_quiz_analytics(request):
+    """Get quiz analytics data"""
+    try:
+        session_key = request.session.session_key or 'default'
+        quizzes = Quiz.objects.filter(session_key=session_key, is_completed=True).order_by('-created_at')
+        
+        if not quizzes.exists():
+            return JsonResponse({
+                'status': 'success',
+                'total_quizzes': 0,
+                'average_score': 0,
+                'best_score': 0,
+                'worst_score': 0,
+                'score_distribution': {},
+                'timeline': [],
+                'quiz_history': []
+            })
+        
+        # Calculate statistics
+        total_quizzes = quizzes.count()
+        scores = [q.score for q in quizzes]
+        total_questions_list = [q.total_questions for q in quizzes]
+        
+        # Calculate percentages
+        percentages = [(q.score / q.total_questions * 100) if q.total_questions > 0 else 0 for q in quizzes]
+        
+        average_score = sum(percentages) / len(percentages) if percentages else 0
+        best_score = max(percentages) if percentages else 0
+        worst_score = min(percentages) if percentages else 0
+        
+        # Score distribution
+        score_distribution = {
+            '0-20': 0,
+            '21-40': 0,
+            '41-60': 0,
+            '61-80': 0,
+            '81-100': 0
+        }
+        
+        for pct in percentages:
+            if pct <= 20:
+                score_distribution['0-20'] += 1
+            elif pct <= 40:
+                score_distribution['21-40'] += 1
+            elif pct <= 60:
+                score_distribution['41-60'] += 1
+            elif pct <= 80:
+                score_distribution['61-80'] += 1
+            else:
+                score_distribution['81-100'] += 1
+        
+        # Timeline data (last 30 days)
+        timeline = []
+        for quiz in quizzes[:30]:  # Last 30 quizzes
+            percentage = (quiz.score / quiz.total_questions * 100) if quiz.total_questions > 0 else 0
+            timeline.append({
+                'date': quiz.created_at.strftime('%Y-%m-%d'),
+                'score': round(percentage, 1)
+            })
+        
+        # Quiz history
+        quiz_history = []
+        for quiz in quizzes:
+            percentage = (quiz.score / quiz.total_questions * 100) if quiz.total_questions > 0 else 0
+            quiz_history.append({
+                'id': quiz.id,
+                'topic': quiz.topic,
+                'score': quiz.score,
+                'total': quiz.total_questions,
+                'percentage': round(percentage, 1),
+                'date': quiz.created_at.strftime('%Y-%m-%d %H:%M')
+            })
+        
+        return JsonResponse({
+            'status': 'success',
+            'total_quizzes': total_quizzes,
+            'average_score': round(average_score, 1),
+            'best_score': round(best_score, 1),
+            'worst_score': round(worst_score, 1),
+            'score_distribution': score_distribution,
+            'timeline': timeline[::-1],  # Reverse for chronological order
+            'quiz_history': quiz_history
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+

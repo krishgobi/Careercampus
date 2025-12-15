@@ -105,16 +105,25 @@ async function showExistingDocuments() {
         const container = document.getElementById('existingDocsContainer');
 
         if (data.documents.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No documents uploaded yet</p>';
+            container.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 2rem;">No documents uploaded yet</p>';
         } else {
             container.innerHTML = data.documents.map(doc => `
-                <div class="doc-item" onclick="selectDocumentForQuiz(${doc.id}, '${doc.title.replace(/'/g, "\\'")}')">
-                    <i class="fas fa-file-pdf"></i>
-                    <div class="doc-info">
-                        <h4>${doc.title}</h4>
-                        <small>Uploaded: ${new Date(doc.uploaded_at).toLocaleDateString()}</small>
+                <div class="doc-item-enhanced">
+                    <div class="doc-icon">
+                        <i class="fas fa-file-pdf"></i>
                     </div>
-                    <i class="fas fa-chevron-right"></i>
+                    <div class="doc-info-enhanced">
+                        <h4>${doc.title}</h4>
+                        <small><i class="fas fa-calendar"></i> ${new Date(doc.uploaded_at).toLocaleDateString()}</small>
+                    </div>
+                    <div class="doc-actions">
+                        <button class="btn-quiz-select" onclick="selectDocumentForQuiz(${doc.id}, '${doc.title.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-play"></i> Generate Quiz
+                        </button>
+                        <button class="btn-delete-doc" onclick="event.stopPropagation(); deleteDocument(${doc.id})" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -125,8 +134,16 @@ async function showExistingDocuments() {
 }
 
 function selectDocumentForQuiz(documentId, title) {
+    // Ask for number of questions
+    const numQuestions = prompt('How many questions do you want in the quiz?', '10');
+
+    if (!numQuestions || isNaN(numQuestions) || numQuestions < 1) {
+        alert('Please enter a valid number of questions');
+        return;
+    }
+
     showQuizStep('quizLoading');
-    document.querySelector('#quizLoading p').textContent = 'Generating quiz from document...';
+    document.querySelector('#quizLoading p').textContent = `Generating ${numQuestions} questions from document...`;
 
     fetch('/api/quiz/generate/', {
         method: 'POST',
@@ -134,7 +151,7 @@ function selectDocumentForQuiz(documentId, title) {
         body: JSON.stringify({
             source_type: 'document',
             topic: title,
-            num_questions: 10,
+            num_questions: parseInt(numQuestions),
             document_id: documentId
         })
     })
@@ -505,14 +522,9 @@ function showResults(data) {
                 <div class="explanation">
                     <strong>Explanation:</strong> ${q.explanation || 'The correct answer is ' + q.correct_answer}
                 </div>
-                <div class="quiz-actions" style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-                    <button class="btn-learn" onclick="addToLearning(${quizData.indexOf(q)})">
-                        <i class="fas fa-plus"></i> Want to Learn
-                    </button>
-                    <button class="btn-wiki" onclick="learnMoreWikipedia('${encodeURIComponent(q.question)}', '${encodeURIComponent(q.correct_answer)}')">
-                        <i class="fab fa-wikipedia-w"></i> Learn More (Wikipedia)
-                    </button>
-                </div>
+                <button class="btn-learn" onclick="addToLearning(${quizData.indexOf(q)})">
+                    <i class="fas fa-plus"></i> Add to Learning Track
+                </button>
             </div>
         `).join('');
     }
@@ -704,4 +716,31 @@ function shareLearningEmail() {
             console.error('Error:', error);
             alert('Failed to send email');
         });
+}
+
+// Delete document function
+async function deleteDocument(docId) {
+    if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/documents/${docId}/delete/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            alert('Document deleted successfully');
+            // Refresh the documents list
+            showExistingDocuments();
+        } else {
+            alert('Failed to delete document: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error deleting document:', error);
+        alert('Error deleting document');
+    }
 }

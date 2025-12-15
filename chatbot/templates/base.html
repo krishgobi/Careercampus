@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{% static 'css/drag-drop.css' %}">
     <link rel="stylesheet" href="{% static 'css/modal.css' %}">
     <link rel="stylesheet" href="{% static 'css/wikipedia.css' %}">
+    <link rel="stylesheet" href="{% static 'css/review-system.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -67,6 +68,11 @@
                     title="Question Papers">
                     <i class="fas fa-file-alt"></i>
                     <span class="nav-text">Question Papers</span>
+                </a>
+                <a href="/quiz-analytics/" class="nav-link {% if '/quiz-analytics/' in request.path %}active{% endif %}"
+                    title="Quiz Analytics">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="nav-text">Quiz Analytics</span>
                 </a>
                 <a href="/profile/" class="nav-link {% if '/profile/' in request.path %}active{% endif %}"
                     title="My Profile">

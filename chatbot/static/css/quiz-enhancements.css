@@ -1,0 +1,121 @@
+/* Simple Document List for Quiz Selection */
+.doc-item-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s;
+}
+
+.doc-item-enhanced:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.doc-icon {
+    width: 40px;
+    height: 40px;
+    background: #667eea;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.doc-info-enhanced {
+    flex: 1;
+    min-width: 0;
+}
+
+.doc-info-enhanced h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.doc-info-enhanced small {
+    color: #64748b;
+    font-size: 0.8125rem;
+}
+
+.doc-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.btn-quiz-select {
+    padding: 0.5rem 1rem;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 0.875rem;
+}
+
+.btn-quiz-select:hover {
+    background: #059669;
+}
+
+.btn-delete-doc {
+    padding: 0.5rem;
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete-doc:hover {
+    background: #fecaca;
+}
+
+/* Reduce chat page spacing */
+.chat-container {
+    height: calc(100vh - 80px) !important;
+    max-height: calc(100vh - 80px) !important;
+}
+
+.chat-messages {
+    padding: 1rem !important;
+}
+
+.message {
+    margin-bottom: 0.75rem !important;
+}
+
+.message-bubble {
+    padding: 0.75rem 1rem !important;
+}
+
+.chat-input-container {
+    padding: 0.75rem !important;
+}
+
+.header-controls {
+    gap: 0.75rem !important;
+}
+
+.document-selector-enhanced {
+    gap: 0.5rem !important;
+}

@@ -27,7 +27,12 @@ urlpatterns = [
     # Wikipedia API
     path('api/wikipedia/', views.wikipedia_api, name='wikipedia_api'),
     
+    # Document deletion
+    path('api/documents/<int:document_id>/delete/', views.delete_document, name='delete_document'),
+    
     # Quiz endpoints
+    path('quiz-analytics/', quiz_views.quiz_analytics_page, name='quiz_analytics'),
+    path('api/quiz/analytics/', quiz_views.get_quiz_analytics, name='get_quiz_analytics'),
     path('api/quiz/generate/', quiz_views.generate_quiz, name='generate_quiz'),
     path('api/quiz/<int:quiz_id>/submit/', quiz_views.submit_quiz_answer, name='submit_quiz_answer'),
     path('api/quiz/<int:quiz_id>/complete/', quiz_views.complete_quiz, name='complete_quiz'),
