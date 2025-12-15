@@ -50,5 +50,31 @@
       "strength": "Large context window (32k tokens)",
       "is_active": true
     }
+  },
+  {
+    "model": "chatbot.aimodel",
+    "pk": 5,
+    "fields": {
+      "name": "DistilGPT2 (Local)",
+      "model_id": "distilgpt2",
+      "provider": "local",
+      "description": "Local lightweight GPT-2 model with RAG support",
+      "use_cases": "Document Q&A,Offline usage,Privacy-focused chat",
+      "strength": "Runs locally with document context",
+      "is_active": true
+    }
+  },
+  {
+    "model": "chatbot.aimodel",
+    "pk": 6,
+    "fields": {
+      "name": "Wikipedia",
+      "model_id": "wikipedia",
+      "provider": "wikipedia",
+      "description": "Free encyclopedia with millions of articles",
+      "use_cases": "Factual information,General knowledge,Research",
+      "strength": "Reliable factual content",
+      "is_active": true
+    }
   }
 ]

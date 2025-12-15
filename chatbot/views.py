@@ -209,7 +209,37 @@ def chat_api(request):
         # Check if feedback is needed
         need_feedback = (usage.prompt_count - usage.last_feedback_at) >= 10
         
-        # Process query with RAG
+        # Check if using local DistilGPT2 model
+        if ai_model.provider == 'local' and ai_model.model_id == 'distilgpt2':
+            from .distilgpt_handler import get_distilgpt_handler
+            
+            # Get document text for RAG
+            document_text = ""
+            if document_id:
+                document = get_object_or_404(Document, id=document_id)
+                document_text = document.text_content
+            
+            # Use DistilGPT2 with RAG
+            handler = get_distilgpt_handler()
+            answer = handler.chat_with_rag(query, document_text)
+            
+            # Save assistant message
+            Message.objects.create(
+                chat=chat,
+                role='assistant',
+                content=answer,
+                model_used=ai_model
+            )
+            
+            return JsonResponse({
+                'status': 'success',
+                'chat_id': chat.id,
+                'answer': answer,
+                'prompt_count': usage.prompt_count,
+                'need_feedback': need_feedback
+            })
+        
+        # Process query with RAG for other models
         from .utils import generate_answer, retrieve_relevant_chunks
         chunks = retrieve_relevant_chunks(query, document_id)
         context = "\n\n".join(chunks)
@@ -486,3 +516,37 @@ def get_model_feedback(request):
 def models_page(request):
     """Render models page with feedback"""
     return render(request, 'models.html')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def wikipedia_api(request):
+    """Fetch Wikipedia content for quiz learning"""
+    try:
+        data = json.loads(request.body)
+        query = data.get('query', '')
+        
+        if not query:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Query is required'
+            })
+        
+        # Import Wikipedia API
+        from .wikipedia_api import wikipedia_answer
+        
+        # Get Wikipedia content
+        content = wikipedia_answer(query)
+        
+        return JsonResponse({
+            'status': 'success',
+            'content': content,
+            'query': query
+        })
+        
+    except Exception as e:
+        print(f"Wikipedia API error: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })

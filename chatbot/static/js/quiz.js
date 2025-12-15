@@ -5,6 +5,55 @@ let currentQuestionIndex = 0;
 let quizSource = null;
 let quizData = [];
 let userAnswers = [];
+let quizUploadInstance = null;
+
+// Initialize quiz drag & drop on page load
+document.addEventListener('DOMContentLoaded', function () {
+    const quizZone = document.getElementById('quizDropZone');
+    if (quizZone) {
+        quizUploadInstance = new DragDropUpload('quizDropZone', 'quizFileInput', {
+            multiple: true,
+            maxFiles: 10,
+            acceptedTypes: ['.pdf', '.docx', '.pptx'],
+            maxSize: 50 * 1024 * 1024,
+            onFilesChanged: function (files) {
+                // Enable generate button when files are selected
+                document.getElementById('generateQuizFromDocs').disabled = files.length === 0;
+
+                // Auto-upload files
+                if (files.length > 0) {
+                    uploadQuizFiles(files);
+                }
+            }
+        });
+    }
+});
+
+// Upload quiz files
+async function uploadQuizFiles(files) {
+    const formData = new FormData();
+    for (let file of files) {
+        formData.append('files', file);
+    }
+
+    try {
+        const response = await fetch('/api/upload/', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            uploadedDocumentIds = data.documents.map(doc => doc.id);
+            document.getElementById('generateQuizFromDocs').disabled = false;
+        }
+    } catch (error) {
+        console.error('Error uploading:', error);
+        alert('Upload failed');
+    }
+}
+
 
 // ===== Modal Control =====
 function openQuizModal() {
@@ -456,14 +505,81 @@ function showResults(data) {
                 <div class="explanation">
                     <strong>Explanation:</strong> ${q.explanation || 'The correct answer is ' + q.correct_answer}
                 </div>
-                <button class="btn-learn" onclick="addToLearning(${quizData.indexOf(q)})">
-                    <i class="fas fa-plus"></i> Want to Learn
-                </button>
+                <div class="quiz-actions" style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button class="btn-learn" onclick="addToLearning(${quizData.indexOf(q)})">
+                        <i class="fas fa-plus"></i> Want to Learn
+                    </button>
+                    <button class="btn-wiki" onclick="learnMoreWikipedia('${encodeURIComponent(q.question)}', '${encodeURIComponent(q.correct_answer)}')">
+                        <i class="fab fa-wikipedia-w"></i> Learn More (Wikipedia)
+                    </button>
+                </div>
             </div>
         `).join('');
     }
 
     showQuizStep('quizResults');
+}
+
+// Wikipedia Learn More function
+async function learnMoreWikipedia(question, answer) {
+    const topic = decodeURIComponent(answer);
+
+    // Show loading
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3><i class="fab fa-wikipedia-w"></i> Learn More from Wikipedia</h3>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 2rem;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #667eea;"></i>
+                    <p style="margin-top: 1rem;">Loading Wikipedia content...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    try {
+        // Fetch Wikipedia content
+        const response = await fetch('/api/wikipedia/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: topic })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            modal.querySelector('.modal-body').innerHTML = `
+                <div style="line-height: 1.8; padding: 1rem;">
+                    <p>${data.content}</p>
+                    <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(topic.replace(/ /g, '_'))}" 
+                       target="_blank" 
+                       class="btn-primary" 
+                       style="display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
+                        Read Full Article <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            `;
+        } else {
+            modal.querySelector('.modal-body').innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <p style="color: var(--danger);">Could not load Wikipedia content</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error fetching Wikipedia:', error);
+        modal.querySelector('.modal-body').innerHTML = `
+            <div style="text-align: center; padding: 2rem;">
+                <p style="color: var(--danger);">Error loading content</p>
+            </div>
+        `;
+    }
 }
 
 function retakeQuiz() {

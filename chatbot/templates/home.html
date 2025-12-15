@@ -8,6 +8,99 @@
     <p class="subtitle">Your Personal AI Learning Companion</p>
 </div>
 
+{% if not user.is_authenticated %}
+<!-- Auth Cards Section -->
+<div class="auth-cards-section">
+    <div class="auth-cards-container">
+        <!-- Sign In Card -->
+        <div class="auth-card-inline active" id="signinCard">
+            <h2><i class="fas fa-sign-in-alt"></i> Sign In</h2>
+
+            <!-- Google OAuth -->
+            {% load socialaccount %}
+            <a href="{% provider_login_url 'google' %}" class="btn-google-inline">
+                <i class="fab fa-google"></i>
+                Continue with Google
+            </a>
+
+            <div class="divider-inline">
+                <span>or</span>
+            </div>
+
+            <form method="post" action="{% url 'account_login' %}" class="auth-form-inline">
+                {% csrf_token %}
+                <div class="form-group-inline">
+                    <label for="login_email">Email</label>
+                    <input type="email" name="login" id="login_email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group-inline">
+                    <label for="login_password">Password</label>
+                    <input type="password" name="password" id="login_password" placeholder="Enter your password"
+                        required>
+                </div>
+                <div class="form-options-inline">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="remember" checked>
+                        <span>Remember me</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn-auth-submit">Sign In</button>
+            </form>
+            <p class="auth-switch">Don't have an account? <a href="#" onclick="switchToSignup(event)">Sign Up</a></p>
+        </div>
+
+        <!-- Sign Up Card -->
+        <div class="auth-card-inline" id="signupCard">
+            <h2><i class="fas fa-user-plus"></i> Create Account</h2>
+
+            <!-- Google OAuth -->
+            <a href="{% provider_login_url 'google' %}" class="btn-google-inline">
+                <i class="fab fa-google"></i>
+                Continue with Google
+            </a>
+
+            <div class="divider-inline">
+                <span>or</span>
+            </div>
+
+            <form method="post" action="{% url 'account_signup' %}" class="auth-form-inline">
+                {% csrf_token %}
+                <div class="form-group-inline">
+                    <label for="signup_email">Email</label>
+                    <input type="email" name="email" id="signup_email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group-inline">
+                    <label for="signup_password1">Password</label>
+                    <input type="password" name="password1" id="signup_password1" placeholder="Create a password"
+                        required>
+                </div>
+                <div class="form-group-inline">
+                    <label for="signup_password2">Confirm Password</label>
+                    <input type="password" name="password2" id="signup_password2" placeholder="Confirm your password"
+                        required>
+                </div>
+                <button type="submit" class="btn-auth-submit">Create Account</button>
+            </form>
+            <p class="auth-switch">Already have an account? <a href="#" onclick="switchToSignin(event)">Sign In</a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchToSignup(e) {
+        e.preventDefault();
+        document.getElementById('signinCard').classList.remove('active');
+        document.getElementById('signupCard').classList.add('active');
+    }
+
+    function switchToSignin(e) {
+        e.preventDefault();
+        document.getElementById('signupCard').classList.remove('active');
+        document.getElementById('signinCard').classList.add('active');
+    }
+</script>
+{% endif %}
+
 <!-- Project Description & Features -->
 <div class="features-section">
     <div class="intro-text">

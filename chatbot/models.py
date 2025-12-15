@@ -7,6 +7,9 @@ class AIModel(models.Model):
     PROVIDER_CHOICES = [
         ('gemini', 'Gemini'),
         ('groq', 'Groq'),
+        ('gpt', 'OpenAI GPT'),
+        ('local', 'Local Model'),
+        ('wikipedia', 'Wikipedia'),
     ]
     
     name = models.CharField(max_length=100)  # Display name
@@ -32,6 +35,7 @@ class Document(models.Model):
     file_type = models.CharField(max_length=10)  # pdf, docx, pptx
     uploaded_at = models.DateTimeField(auto_now_add=True)
     text_content = models.TextField(blank=True)  # Extracted text
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='uploaded_documents')
     
     class Meta:
         ordering = ['-uploaded_at']
@@ -45,6 +49,7 @@ class Chat(models.Model):
     name = models.CharField(max_length=255, default="New Chat")
     document = models.ForeignKey(Document, on_delete=models.SET_NULL, null=True, blank=True)
     selected_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='chats')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -121,6 +126,7 @@ class Quiz(models.Model):
     total_questions = models.IntegerField(default=10)
     score = models.IntegerField(default=0)
     is_completed = models.BooleanField(default=False)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='quizzes')
     session_key = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -153,6 +159,7 @@ class QuizQuestion(models.Model):
 class LearningItem(models.Model):
     """Learning track items from quiz mistakes or manual additions"""
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, null=True, blank=True, related_name='learning_items')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='learning_items')
     session_key = models.CharField(max_length=100, blank=True)
     topic = models.CharField(max_length=255)
     question = models.TextField()

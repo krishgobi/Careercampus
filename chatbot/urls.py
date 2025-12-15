@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import quiz_views
 from . import question_paper_views
+from . import profile_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -22,6 +23,9 @@ urlpatterns = [
     path('api/models/', views.list_models, name='list_models'),
     path('api/feedback/submit/', views.submit_feedback, name='submit_feedback'),
     path('api/feedback/models/', views.get_model_feedback, name='get_model_feedback'),
+    
+    # Wikipedia API
+    path('api/wikipedia/', views.wikipedia_api, name='wikipedia_api'),
     
     # Quiz endpoints
     path('api/quiz/generate/', quiz_views.generate_quiz, name='generate_quiz'),
@@ -50,5 +54,10 @@ urlpatterns = [
     path('api/question-paper/<int:paper_id>/export/', question_paper_views.export_pdf, name='export_question_paper'),
     path('question-paper/<int:paper_id>/', question_paper_views.view_paper, name='view_paper'),
     path('question-paper/<int:paper_id>/learn/', question_paper_views.learn_mode, name='learn_mode'),
+    
+    # User Profile endpoints
+    path('profile/', profile_views.user_profile, name='user_profile'),
+    path('api/profile/update/', profile_views.update_profile, name='update_profile'),
+    path('api/profile/activity/', profile_views.get_all_activity, name='get_all_activity'),
 ]
 

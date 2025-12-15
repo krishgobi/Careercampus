@@ -12,6 +12,10 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/quiz-styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth-cards.css' %}">
+    <link rel="stylesheet" href="{% static 'css/drag-drop.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modal.css' %}">
+    <link rel="stylesheet" href="{% static 'css/wikipedia.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -64,10 +68,12 @@
                     <i class="fas fa-file-alt"></i>
                     <span class="nav-text">Question Papers</span>
                 </a>
-                <a href="#" class="nav-link" title="Virtual Teacher">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    <span class="nav-text">Virtual Teacher</span>
+                <a href="/profile/" class="nav-link {% if '/profile/' in request.path %}active{% endif %}"
+                    title="My Profile">
+                    <i class="fas fa-user-circle"></i>
+                    <span class="nav-text">My Profile</span>
                 </a>
+
             </div>
 
             <div class="sidebar-footer">
@@ -89,6 +95,7 @@
         </main>
     </div>
 
+    <script src="{% static 'js/drag-drop.js' %}"></script>
     {% block extra_js %}{% endblock %}
 
     {% if user.is_authenticated %}

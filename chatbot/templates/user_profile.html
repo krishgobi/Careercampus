@@ -8,209 +8,77 @@
 {% endblock %}
 
 {% block content %}
-<div class="profile-container">
-    <!-- Profile Header -->
-    <div class="profile-header">
-        <div class="profile-avatar">
-            <div class="avatar-circle">
+<div class="profile-wrapper">
+    <div class="profile-card">
+        <!-- User Info -->
+        <div class="user-section">
+            <div class="avatar">
                 {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
             </div>
-        </div>
-        <div class="profile-info">
-            <h1 class="profile-name" id="display-name">
-                {{ user.first_name }} {{ user.last_name }}
-            </h1>
-            <p class="profile-email" id="display-email">{{ user.email }}</p>
-            <p class="profile-username">@{{ user.username }}</p>
-            <button class="btn-edit-profile" onclick="openEditModal()">
-                <i class="fas fa-edit"></i> Edit Profile
+            <div class="user-details">
+                <h1 id="display-name">{{ user.first_name }} {{ user.last_name }}</h1>
+                <p id="display-email">{{ user.email }}</p>
+            </div>
+            <button class="btn-edit" onclick="openEditModal()">
+                <i class="fas fa-edit"></i>
             </button>
         </div>
-        <div class="profile-stats-quick">
-            <div class="quick-stat">
-                <i class="fas fa-file-alt"></i>
-                <span>{{ stats.total_question_papers }}</span>
-                <label>Papers</label>
-            </div>
-            <div class="quick-stat">
-                <i class="fas fa-folder"></i>
-                <span>{{ stats.total_documents }}</span>
-                <label>Documents</label>
-            </div>
-            <div class="quick-stat">
-                <i class="fas fa-brain"></i>
-                <span>{{ stats.total_learning_items }}</span>
-                <label>Learning</label>
-            </div>
-        </div>
-    </div>
 
-    <!-- Stats Dashboard -->
-    <div class="stats-dashboard">
-        <h2><i class="fas fa-chart-bar"></i> Activity Overview</h2>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <!-- Activity Stats -->
+        <div class="stats-section">
+            <h2>Activity Summary</h2>
+            <div class="stats">
+                <div class="stat">
                     <i class="fas fa-file-alt"></i>
+                    <span class="number">{{ stats.total_question_papers }}</span>
+                    <span class="label">Papers Generated</span>
                 </div>
-                <div class="stat-content">
-                    <h3>{{ stats.total_question_papers }}</h3>
-                    <p>Question Papers Generated</p>
-                    <small>{{ stats.papers_this_week }} this week</small>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                    <i class="fas fa-star"></i>
-                </div>
-                <div class="stat-content">
-                    <h3>{{ stats.important_papers }}</h3>
-                    <p>Important Questions</p>
-                    <small>Generated from topics</small>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                    <i class="fas fa-crystal-ball"></i>
-                </div>
-                <div class="stat-content">
-                    <h3>{{ stats.predicted_papers }}</h3>
-                    <p>Predicted Papers</p>
-                    <small>Based on analysis</small>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="stat">
                     <i class="fas fa-upload"></i>
+                    <span class="number">{{ stats.total_documents }}</span>
+                    <span class="label">Documents Uploaded</span>
                 </div>
-                <div class="stat-content">
-                    <h3>{{ stats.total_documents }}</h3>
-                    <p>Documents Uploaded</p>
-                    <small>For analysis</small>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <div class="stat">
                     <i class="fas fa-comments"></i>
+                    <span class="number">{{ stats.total_chats }}</span>
+                    <span class="label">Conversations</span>
                 </div>
-                <div class="stat-content">
-                    <h3>{{ stats.total_chats }}</h3>
-                    <p>AI Conversations</p>
-                    <small>Learning sessions</small>
+                <div class="stat">
+                    <i class="fas fa-brain"></i>
+                    <span class="number">{{ stats.total_learning_items }}</span>
+                    <span class="label">Learning Items</span>
                 </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <div class="stat-content">
-                    <h3>{{ stats.total_learning_items }}</h3>
-                    <p>Learning Items</p>
-                    <small>Tracked for review</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Activity -->
-    <div class="recent-activity">
-        <h2><i class="fas fa-history"></i> Recent Activity</h2>
-
-        <div class="activity-section">
-            <h3>Recent Question Papers</h3>
-            <div class="activity-list">
-                {% for paper in recent_papers %}
-                <div class="activity-item">
-                    <div class="activity-icon">
-                        {% if paper.paper_type == 'important' %}
-                        <i class="fas fa-star"></i>
-                        {% else %}
-                        <i class="fas fa-crystal-ball"></i>
-                        {% endif %}
-                    </div>
-                    <div class="activity-content">
-                        <h4>{{ paper.title }}</h4>
-                        <p>{{ paper.subject }} • {{ paper.paper_type|title }}</p>
-                        <small>{{ paper.created_at|timesince }} ago</small>
-                    </div>
-                    <div class="activity-actions">
-                        <a href="{% url 'view_paper' paper.id %}" class="btn-view">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                        <a href="{% url 'learn_mode' paper.id %}" class="btn-learn">
-                            <i class="fas fa-brain"></i> Learn
-                        </a>
-                    </div>
-                </div>
-                {% empty %}
-                <p class="empty-message">No question papers generated yet. Start creating!</p>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="activity-section">
-            <h3>Recent Documents</h3>
-            <div class="activity-list">
-                {% for doc in recent_documents %}
-                <div class="activity-item">
-                    <div class="activity-icon">
-                        <i class="fas fa-file-pdf"></i>
-                    </div>
-                    <div class="activity-content">
-                        <h4>{{ doc.title }}</h4>
-                        <p>{{ doc.file_type|upper }} • {% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else
-                            %}Size unknown{% endif %}</p>
-                        <small>{{ doc.uploaded_at|timesince }} ago</small>
-                    </div>
-                </div>
-                {% empty %}
-                <p class="empty-message">No documents uploaded yet.</p>
-                {% endfor %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Edit Profile Modal -->
-<div class="modal hidden" id="edit-profile-modal">
-    <div class="modal-overlay" onclick="closeEditModal()"></div>
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3><i class="fas fa-user-edit"></i> Edit Profile</h3>
-            <button class="modal-close" onclick="closeEditModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <form id="edit-profile-form">
-                <div class="form-group">
-                    <label for="first-name">First Name</label>
-                    <input type="text" id="first-name" name="first_name" value="{{ user.first_name }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="last-name">Last Name</label>
-                    <input type="text" id="last-name" name="last_name" value="{{ user.last_name }}">
-                </div>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" value="{{ user.email }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="username">Username (read-only)</label>
-                    <input type="text" id="username" value="{{ user.username }}" readonly>
-                </div>
-                <button type="submit" class="btn-save">
-                    <i class="fas fa-save"></i> Save Changes
-                </button>
-            </form>
+<!-- Edit Modal -->
+<div class="modal" id="edit-modal">
+    <div class="modal-box">
+        <h2>Edit Profile</h2>
+        <div class="form">
+            <div class="field">
+                <label>First Name</label>
+                <input type="text" id="first-name" value="{{ user.first_name }}">
+            </div>
+            <div class="field">
+                <label>Last Name</label>
+                <input type="text" id="last-name" value="{{ user.last_name }}">
+            </div>
+            <div class="field">
+                <label>Email</label>
+                <input type="email" id="email" value="{{ user.email }}">
+            </div>
+            <div class="buttons">
+                <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                <button class="btn-save" onclick="saveProfile()">Save</button>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script src="{% static 'js/profile.js' %}"></script>
 {% endblock %}

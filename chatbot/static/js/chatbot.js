@@ -532,26 +532,49 @@ async function downloadChatAsPDF(chatId) {
     }
 }
 
-// ===== 7. Document Upload from Chatbot =====
+// ===== 7. Document Upload from Chatbot with Drag & Drop =====
+let chatUploadInstance = null;
+
 function triggerFileUpload() {
-    document.getElementById('chatFileInput').click();
+    // Open upload modal
+    document.getElementById('uploadModal').classList.add('active');
+
+    // Initialize drag & drop if not already done
+    if (!chatUploadInstance) {
+        chatUploadInstance = new DragDropUpload('chatDropZone', 'chatFileInput', {
+            multiple: false,
+            acceptedTypes: ['.pdf', '.docx', '.pptx'],
+            maxSize: 50 * 1024 * 1024
+        });
+    }
 }
 
-async function handleChatFileUpload(event) {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+function closeUploadModal() {
+    document.getElementById('uploadModal').classList.remove('active');
+    if (chatUploadInstance) {
+        chatUploadInstance.clearFiles();
+    }
+}
 
+async function uploadChatDocument() {
+    if (!chatUploadInstance || chatUploadInstance.getFiles().length === 0) {
+        alert('Please select a file to upload');
+        return;
+    }
+
+    const files = chatUploadInstance.getFiles();
     const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-        formData.append('files', files[i]);
+
+    for (let file of files) {
+        formData.append('files', file);
     }
 
     try {
         // Show loading state
-        const btn = document.querySelector('.btn-upload-doc');
-        if (btn) {
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
+        const uploadBtn = document.querySelector('#uploadModal .btn-primary');
+        if (uploadBtn) {
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            uploadBtn.disabled = true;
         }
 
         const response = await fetch('/api/upload/', {
@@ -573,6 +596,8 @@ async function handleChatFileUpload(event) {
                     select.value = doc.id;
                 });
             }
+
+            closeUploadModal();
             alert('Document uploaded successfully!');
         } else {
             alert('Upload failed: ' + (data.message || 'Unknown error'));
@@ -582,12 +607,50 @@ async function handleChatFileUpload(event) {
         alert('Error uploading file');
     } finally {
         // Reset button state
-        const btn = document.querySelector('.btn-upload-doc');
-        if (btn) {
-            btn.innerHTML = '<i class="fas fa-plus"></i>';
-            btn.disabled = false;
+        const uploadBtn = document.querySelector('#uploadModal .btn-primary');
+        if (uploadBtn) {
+            uploadBtn.innerHTML = 'Upload';
+            uploadBtn.disabled = false;
         }
-        // Clear file input
+    }
+}
+
+// Legacy function for backward compatibility
+async function handleChatFileUpload(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
+
+    try {
+        const response = await fetch('/api/upload/', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            const select = document.getElementById('documentSelect');
+            if (select && data.documents) {
+                data.documents.forEach(doc => {
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = doc.title;
+                    select.appendChild(option);
+                    select.value = doc.id;
+                });
+            }
+            alert('Document uploaded successfully!');
+        } else {
+            alert('Upload failed: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        alert('Error uploading file');
+    } finally {
         event.target.value = '';
     }
 }

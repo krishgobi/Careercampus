@@ -52,14 +52,13 @@
 
                 <div class="form-group hidden" id="document-input">
                     <label for="document">Upload Document</label>
-                    <div class="file-upload-area">
-                        <input type="file" id="document" name="document" accept=".pdf,.docx,.pptx">
-                        <div class="upload-placeholder">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload or drag and drop</p>
-                            <span>PDF, DOCX, PPTX</span>
-                        </div>
+                    <div class="drag-drop-zone" id="documentDropZone">
+                        <i class="fas fa-cloud-upload-alt drag-drop-icon"></i>
+                        <p class="drag-drop-text">Drag & drop your course material</p>
+                        <p class="drag-drop-hint">or <span class="browse">browse files</span></p>
+                        <p class="drag-drop-hint">PDF, DOCX, PPTX (Max 50MB)</p>
                     </div>
+                    <input type="file" id="document" name="document" accept=".pdf,.docx,.pptx" style="display:none">
                 </div>
 
                 <div class="form-group">
@@ -96,16 +95,14 @@
 
                 <div class="form-group">
                     <label for="previous-papers">Upload Previous Papers</label>
-                    <div class="file-upload-area">
-                        <input type="file" id="previous-papers" name="previous_papers" multiple
-                            accept=".pdf,.docx,.pptx">
-                        <div class="upload-placeholder">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload multiple files</p>
-                            <span>PDF, DOCX, PPTX (Upload as many as you want)</span>
-                        </div>
+                    <div class="drag-drop-zone" id="papersDropZone">
+                        <i class="fas fa-cloud-upload-alt drag-drop-icon"></i>
+                        <p class="drag-drop-text">Drag & drop previous papers</p>
+                        <p class="drag-drop-hint">or <span class="browse">browse files</span></p>
+                        <p class="drag-drop-hint">Multiple files supported • PDF, DOCX, PPTX</p>
                     </div>
-                    <div id="file-list"></div>
+                    <input type="file" id="previous-papers" name="previous_papers" multiple accept=".pdf,.docx,.pptx"
+                        style="display:none">
                 </div>
 
                 <div class="form-group">
@@ -152,4 +149,32 @@
 
 {% block extra_js %}
 <script src="{% static 'js/question-paper.js' %}"></script>
+<script>
+    // Initialize drag & drop for document upload
+    let docUpload = null;
+    let papersUpload = null;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Document upload drag & drop
+        const docZone = document.getElementById('documentDropZone');
+        if (docZone) {
+            docUpload = new DragDropUpload('documentDropZone', 'document', {
+                multiple: false,
+                acceptedTypes: ['.pdf', '.docx', '.pptx'],
+                maxSize: 50 * 1024 * 1024
+            });
+        }
+
+        // Previous papers drag & drop
+        const papersZone = document.getElementById('papersDropZone');
+        if (papersZone) {
+            papersUpload = new DragDropUpload('papersDropZone', 'previous-papers', {
+                multiple: true,
+                maxFiles: 10,
+                acceptedTypes: ['.pdf', '.docx', '.pptx'],
+                maxSize: 50 * 1024 * 1024
+            });
+        }
+    });
+</script>
 {% endblock %}

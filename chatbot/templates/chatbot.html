@@ -78,6 +78,7 @@
                         onchange="handleChatFileUpload(event)">
                 </div>
 
+
                 <div class="voice-settings">
                     <i class="fas fa-volume-up"></i>
                     <select id="accentSelect" onchange="changeVoiceAccent()">
@@ -87,10 +88,6 @@
                         <option value="en-AU">Australian English</option>
                     </select>
                 </div>
-
-                <button class="btn-rate-model" onclick="openRatingModal()" title="Rate Current Model">
-                    <i class="fas fa-star"></i> Rate Model
-                </button>
             </div>
         </div>
 
@@ -187,15 +184,16 @@
         <div class="quiz-step hidden" id="quizNewDocUpload">
             <div class="quiz-header">
                 <h2>Upload Documents</h2>
-                <p>Upload one or multiple files (PDF, DOCX, PPTX)</p>
+                <p>Upload one or multiple files for quiz generation</p>
             </div>
             <div class="quiz-upload-area">
-                <input type="file" id="quizFileInput" multiple accept=".pdf,.docx,.pptx" style="display: none"
-                    onchange="handleQuizFileUpload(event)">
-                <button class="btn-primary" onclick="document.getElementById('quizFileInput').click()">
-                    <i class="fas fa-upload"></i> Choose Files
-                </button>
-                <div id="quizUploadedFiles" class="uploaded-files-list"></div>
+                <div class="drag-drop-zone" id="quizDropZone">
+                    <i class="fas fa-cloud-upload-alt drag-drop-icon"></i>
+                    <p class="drag-drop-text">Drag & drop documents for quiz</p>
+                    <p class="drag-drop-hint">or <span class="browse">browse files</span></p>
+                    <p class="drag-drop-hint">Multiple files • PDF, DOCX, PPTX</p>
+                </div>
+                <input type="file" id="quizFileInput" multiple accept=".pdf,.docx,.pptx" style="display:none">
                 <button class="btn-primary" id="generateQuizFromDocs" onclick="generateQuizFromUploadedDocs()" disabled
                     style="margin-top: 1rem;">
                     Generate Quiz
@@ -331,6 +329,29 @@
         <div class="feedback-actions">
             <button class="btn-primary" onclick="submitFeedback()">Submit</button>
             <button class="btn-text" onclick="closeFeedbackModal()">Skip</button>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal with Drag & Drop -->
+<div class="modal-overlay" id="uploadModal" onclick="closeUploadModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3><i class="fas fa-cloud-upload-alt"></i> Upload Document</h3>
+            <button class="modal-close" onclick="closeUploadModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="drag-drop-zone" id="chatDropZone">
+                <i class="fas fa-cloud-upload-alt drag-drop-icon"></i>
+                <p class="drag-drop-text">Drag & drop your document here</p>
+                <p class="drag-drop-hint">or <span class="browse">browse files</span></p>
+                <p class="drag-drop-hint">Supported: PDF, DOCX, PPTX (Max 50MB)</p>
+            </div>
+            <input type="file" id="chatFileInput" accept=".pdf,.docx,.pptx" style="display:none">
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeUploadModal()">Cancel</button>
+            <button class="btn-primary" onclick="uploadChatDocument()">Upload</button>
         </div>
     </div>
 </div>
