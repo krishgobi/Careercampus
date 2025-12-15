@@ -1,0 +1,108 @@
+
+
+def predict_questions_ai(papers_content, subject, requirements):
+    """
+    Analyze previous papers and predict likely questions with EXACT counts
+    
+    Args:
+        papers_content: List of text content from previous papers
+        subject: Subject name
+        requirements: Dict of {marks: count} e.g., {2: 1, 5: 5}
+        
+    Returns:
+        Dict with predicted questions organized by marks
+    """
+    print(f"[PREDICTION_AI] Analyzing {len(papers_content)} previous papers")
+    print(f"[PREDICTION_AI] Requirements: {requirements}")
+    
+    # Combine all papers
+    combined_content = "\n\n---PAPER SEPARATOR---\n\n".join(papers_content[:5])
+    
+    # Build requirements string
+    req_parts = []
+    for marks, count in requirements.items():
+        req_parts.append(f"{count} questions of {marks} marks each")
+    requirements_str = ", ".join(req_parts)
+    
+    prompt = f"""Analyze these previous year question papers and predict likely exam questions.
+
+Subject: {subject}
+
+Previous Papers:
+{combined_content[:10000]}
+
+STRICT REQUIREMENTS - Generate EXACTLY:
+{requirements_str}
+
+IMPORTANT RULES:
+1. Generate EXACTLY the number of questions specified for each mark category
+2. Each question must be of the specified marks (not more, not less)
+3. Questions should be predictive based on patterns in previous papers
+4. Focus on frequently asked topics and important concepts
+5. Include variety in question types (theory, numerical, conceptual)
+
+Return ONLY a JSON object in this exact format:
+{{
+    "2": [
+        {{
+            "question": "Question text here",
+            "marks": 2,
+            "reasoning": "Why this question is likely to appear"
+        }}
+    ],
+    "5": [
+        {{
+            "question": "Question text here",
+            "marks": 5,
+            "reasoning": "Why this question is likely to appear"
+        }}
+    ]
+}}
+
+Generate exactly {sum(requirements.values())} questions total: {requirements_str}
+"""
+    
+    # Try Groq first
+    try:
+        print("[PREDICTION_AI] Trying Groq API...")
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=4000
+        )
+        
+        content = response.choices[0].message.content.strip()
+        print(f"[PREDICTION_AI] Groq response length: {len(content)}")
+        
+        # Parse JSON
+        text = clean_json_response(content)
+        questions_by_marks = json.loads(text)
+        
+        # Validate counts match requirements
+        for marks, count in requirements.items():
+            marks_str = str(marks)
+            if marks_str in questions_by_marks:
+                actual_count = len(questions_by_marks[marks_str])
+                if actual_count != count:
+                    print(f"[WARNING] Expected {count} questions of {marks} marks, got {actual_count}")
+        
+        return questions_by_marks
+        
+    except Exception as e:
+        print(f"[PREDICTION_AI] Groq failed: {e}")
+        print("[PREDICTION_AI] Trying Gemini fallback...")
+        
+        # Fallback to Gemini
+        try:
+            model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            response = model.generate_content(prompt)
+            content = response.text.strip()
+            
+            text = clean_json_response(content)
+            return json.loads(text)
+            
+        except Exception as e2:
+            print(f"[PREDICTION_AI] Gemini also failed: {e2}")
+            # Return empty structure
+            return {str(marks): [] for marks in requirements.keys()}
